@@ -7,22 +7,14 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext.global
 
-object DurakonlineServer {
+object HttpServer {
 
   def stream[F[_] : ConcurrentEffect : Timer]: Stream[F, Nothing] = {
     val httpApp = (
-      DurakonlineRoutes.helloWorldRoutes[F]
+      LobbyRoutes.helloWorldRoutes[F]
     ).orNotFound
 
     for {
-
-      // Combine Service Routes into an HttpApp.
-      // Can also be done via a Router if you
-      // want to extract a segments not checked
-      // in the underlying routes.
-
-      // With Middlewares in place
-
       exitCode <- BlazeServerBuilder[F](global)
         .bindHttp(8080, "0.0.0.0")
         .withHttpApp(httpApp)

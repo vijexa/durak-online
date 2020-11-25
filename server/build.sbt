@@ -3,6 +3,7 @@ val circeVersion = "0.13.0"
 val catsVersion = "2.2.0"
 val catsEffectVersion = "2.2.0"
 val scalaTestVersion = "3.1.0.0-RC2"
+val LogbackVersion = "1.2.3"
 
 lazy val root = (project in file("."))
   .settings(
@@ -22,6 +23,8 @@ lazy val root = (project in file("."))
 
       "org.typelevel"   %% "cats-core"           % catsVersion,
       "org.typelevel"   %% "cats-effect"         % catsEffectVersion,
+
+      "ch.qos.logback"  %  "logback-classic"     % LogbackVersion,
 
       "org.scalatestplus" %% "scalatestplus-scalacheck" % scalaTestVersion % Test,
       "org.scalatestplus" %% "selenium-2-45"            % scalaTestVersion % Test,
