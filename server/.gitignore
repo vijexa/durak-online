@@ -1,0 +1,4 @@
+.metals/
+metals.*
+.bloop
+target/
