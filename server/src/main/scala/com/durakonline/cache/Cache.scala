@@ -5,5 +5,7 @@ trait Cache[F[_], K, V] {
 
   def put(key: K, value: V): F[Unit]
 
+  def modify(key: K, f: V => V): F[Unit]
+
   def remove(key: K): F[Unit]
 }

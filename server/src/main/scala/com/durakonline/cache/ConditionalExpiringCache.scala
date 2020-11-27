@@ -50,6 +50,20 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
   )
 
   /**
+    * Atomically modify value if it exists, using `f` function.
+    * Resets value expiration time.
+    */
+  def modify(key: K, f: V => V) = state.update(
+    m => m.get(key)
+      .map{case (_, value) => f(value)}
+      .fold(m)(
+        value => m + (
+          key -> (expiresIn.length -> value)
+        )
+      )
+  )
+
+  /**
     * Removes value at specified key.
     */
   def remove(key: K): F[Unit] = state.update(

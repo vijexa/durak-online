@@ -42,6 +42,22 @@ class ConditionalExpiringCacheSpec extends AnyFlatSpec with IOApp {
     cache.get(1).unsafeRunSync() shouldBe Some("bar")
   }
 
+  "ConditionalExpiringCache.modify" should "work as expected" in {
+    val cache = for {
+      cache <- ConditionalExpiringCache.of[IO, Int, String](50.milli, 10.milli)
+      _ <- cache.put(0, "foo")
+      _ <- cache.put(1, "expiring")
+      _ <- IO.sleep(40.milli)
+      _ <- cache.modify(0, (_ + "bar"))
+      _ <- IO.sleep(40.milli)
+      _ <- cache.modify(2, (_ + "test"))
+    } yield cache
+
+    cache.unsafeRunSync().get(0).unsafeRunSync() shouldBe Some("foobar")
+    cache.unsafeRunSync().get(1).unsafeRunSync() shouldBe None
+    cache.unsafeRunSync().get(2).unsafeRunSync() shouldBe None
+  }
+
 
   // run method needs to be defined when extending IOApp
   def run(args: List[String]): IO[ExitCode] = ???
