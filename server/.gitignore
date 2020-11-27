@@ -2,3 +2,4 @@
 metals.*
 .bloop
 target/
+*.worksheet.sc
