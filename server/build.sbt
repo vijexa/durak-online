@@ -11,6 +11,7 @@ lazy val root = (project in file("."))
     name := "durak-online",
     version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.13.3",
+    scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
       "org.http4s"      %% "http4s-blaze-server" % http4sVersion,
       "org.http4s"      %% "http4s-blaze-client" % http4sVersion,

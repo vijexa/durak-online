@@ -1,4 +1,4 @@
-package com.example.durakonline
+package com.durakonline
 
 import cats.effect.Sync
 import org.http4s.HttpRoutes

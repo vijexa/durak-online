@@ -1,6 +1,5 @@
-package com.example.durakonline
+package com.durakonline
 
-import cats.implicits._
 import cats.effect.{ConcurrentEffect, Timer}
 import fs2.Stream
 import org.http4s.implicits._
