@@ -7,35 +7,51 @@ import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.implicits._
 
-class ConditionalExpiringCache[F[_] : Clock : Monad, K, V](
+/**
+  * Expiring cache that can redeem expired elements.
+  */
+class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
   state: Ref[F, Map[K, (Long, V)]],
   expiresIn: FiniteDuration
 ) extends Cache[F, K, V] {
 
-  def checkExpirationRepeatedly(
-    interval: FiniteDuration
+  private def checkExpirationRepeatedly(
+    interval: FiniteDuration,
+    redeemer: (K, V) => Boolean
   )(
     implicit T: Timer[F], C: Concurrent[F]
   ): F[Unit] = {
     for {
       _ <- state.update(
         _.collect{
-          case (key, (exp, value)) if exp > 0 => (key, (exp - interval.length, value))
+          case (key, (exp, value)) if exp > 0 => 
+            (key, (exp - interval.length, value))
+          case (key, (exp, value)) if exp <= 0 && redeemer(key, value) => 
+            (key, (expiresIn.length, value))
         }
       )
       _ <- T.sleep(interval)
-      _ <- checkExpirationRepeatedly(interval)
+      _ <- checkExpirationRepeatedly(interval, redeemer)
     } yield ()
   }
 
+  /**
+    * Returns `Option` of value by key.
+    */
   def get(key: K): F[Option[V]] = state.get.map(_.get(key).map{case (_, v) => v})
 
+  /**
+    * Puts new value at specified key. 
+    */
   def put(key: K, value: V): F[Unit] = state.update(
     m => (
       m + (key -> (expiresIn.length -> value))
     )
   )
 
+  /**
+    * Removes value at specified key.
+    */
   def remove(key: K): F[Unit] = state.update(
     m => (
       m.removed(key)
@@ -44,11 +60,27 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V](
 
 }
 
+/**
+  * [[ConditionalExpiringCache]] companion object
+  */
 object ConditionalExpiringCache {
+  private def defaultRedeemer [K, V] (key: K, value: V) = false
+
+  /**
+    * @param expiresIn Time in which newly added element is expired.
+    * @param checkOnExpirationsEvery Interval for checking elements expiration.
+    * @param redeemer Function that is applied to expired elements. 
+    * If it returns true, then this element will not be removed and
+    * its expiration will be postponed for another `expiresIn`.
+    * @param T
+    * @param C
+    * @return
+    */
   def of[F[_] : Clock, K, V](
     expiresIn: FiniteDuration,
-    checkOnExpirationsEvery: FiniteDuration
-  )(implicit T: Timer[F], C: Concurrent[F]): F[Cache[F, K, V]] = {
+    checkOnExpirationsEvery: FiniteDuration,
+    redeemer: (K, V) => Boolean = defaultRedeemer _
+  )(implicit T: Timer[F], C: Concurrent[F]): F[ConditionalExpiringCache[F, K, V]] = {
 
     for {
       cache <- C.delay(
@@ -62,11 +94,11 @@ object ConditionalExpiringCache {
       )
       _ <- C.start(
         cache.checkExpirationRepeatedly(
-          checkOnExpirationsEvery
+          checkOnExpirationsEvery,
+          redeemer
         )
       )
     } yield cache
   }
-    
 
 }
