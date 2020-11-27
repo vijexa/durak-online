@@ -13,35 +13,46 @@ import org.scalatest.matchers.should.Matchers._
 class ConditionalExpiringCacheSpec extends AnyFlatSpec with IOApp {
 
   def evaluateCache (redeemer: String => Boolean) = {
-    val cache = for {
+    for {
       cache <- ConditionalExpiringCache.of[IO, Int, String](50.milli, 10.milli, redeemer)
       _ <- cache.put(0, "foo")
       _ <- IO.sleep(50.milli)
       _ <- cache.put(1, "bar")
       _ <- IO.sleep(20.milli)
     } yield cache
-
-    cache.unsafeRunSync()
   }
 
   "ConditionalExpiringCache" should "remove expired values" in {
-    val cache = evaluateCache(_ => false)
+    val test = for {
+      cache <- evaluateCache(_ => false)
+      zero  <- cache.get(0)
+      _     <- IO(zero shouldBe None)
+      one   <- cache.get(1)
+      _     <- IO(one shouldBe Some("bar"))
+      size  <- cache.size
+      _     <- IO(size shouldBe 1)
+    } yield ()
 
-    cache.get(0).unsafeRunSync() shouldBe None
-    cache.get(1).unsafeRunSync() shouldBe Some("bar")
-    cache.size.unsafeRunSync() shouldBe 1
+    test.unsafeRunSync()
   }
 
   it should "redeem expired values using redeem function" in {
-    val cache = evaluateCache(_ == "foo")
+    
+    val test = for {
+      cache <- evaluateCache(_ == "foo")
+      zero  <- cache.get(0)
+      _     <- IO(zero shouldBe Some("foo"))
+      one   <- cache.get(1)
+      _     <- IO(one shouldBe Some("bar"))
+      size  <- cache.size
+      _     <- IO(size shouldBe 2)
+    } yield ()
 
-    cache.get(0).unsafeRunSync() shouldBe Some("foo")
-    cache.get(1).unsafeRunSync() shouldBe Some("bar")
-    cache.size.unsafeRunSync() shouldBe 2
+    test.unsafeRunSync()
   }
 
   "ConditionalExpiringCache.modify" should "work as expected" in {
-    val cache = for {
+    val test = for {
       cache <- ConditionalExpiringCache.of[IO, Int, String](50.milli, 10.milli)
       _ <- cache.put(0, "foo")
       _ <- cache.put(1, "expiring")
@@ -49,11 +60,16 @@ class ConditionalExpiringCacheSpec extends AnyFlatSpec with IOApp {
       _ <- cache.modify(0, (_ + "bar"))
       _ <- IO.sleep(40.milli)
       _ <- cache.modify(2, (_ + "test"))
+
+      zero <- cache.get(0)
+      _    <- IO(zero shouldBe Some("foobar"))
+      one  <- cache.get(1)
+      _    <- IO(one shouldBe None)
+      two  <- cache.get(2)
+      _    <- IO(two shouldBe None)
     } yield cache
 
-    cache.unsafeRunSync().get(0).unsafeRunSync() shouldBe Some("foobar")
-    cache.unsafeRunSync().get(1).unsafeRunSync() shouldBe None
-    cache.unsafeRunSync().get(2).unsafeRunSync() shouldBe None
+    test.unsafeRunSync()
   }
 
 
