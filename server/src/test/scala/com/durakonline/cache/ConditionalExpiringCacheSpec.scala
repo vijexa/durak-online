@@ -29,6 +29,7 @@ class ConditionalExpiringCacheSpec extends AnyFlatSpec with IOApp {
 
     cache.get(0).unsafeRunSync() shouldBe None
     cache.get(1).unsafeRunSync() shouldBe Some("bar")
+    cache.size.unsafeRunSync() shouldBe 1
   }
 
   it should "redeem expired values using redeem function" in {
@@ -36,6 +37,7 @@ class ConditionalExpiringCacheSpec extends AnyFlatSpec with IOApp {
 
     cache.get(0).unsafeRunSync() shouldBe Some("foo")
     cache.get(1).unsafeRunSync() shouldBe Some("bar")
+    cache.size.unsafeRunSync() shouldBe 2
   }
 
   "ConditionalExpiringCache.modify" should "work as expected" in {

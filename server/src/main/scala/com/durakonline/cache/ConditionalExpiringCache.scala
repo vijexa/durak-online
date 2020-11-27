@@ -72,6 +72,11 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
     )
   )
 
+  /**
+    * Returns amount of elements in cache
+    */
+  def size = state.get.map(_.size)
+
 }
 
 /**
