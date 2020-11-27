@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers._
 // extending IOApp to have those sweet implicits
 class ConditionalExpiringCacheSpec extends AnyFlatSpec with IOApp {
 
-  def evaluateCache (redeemer: (Int, String) => Boolean) = {
+  def evaluateCache (redeemer: String => Boolean) = {
     val cache = for {
       cache <- ConditionalExpiringCache.of[IO, Int, String](50.milli, 10.milli, redeemer)
       _ <- cache.put(0, "foo")
@@ -25,18 +25,14 @@ class ConditionalExpiringCacheSpec extends AnyFlatSpec with IOApp {
   }
 
   "ConditionalExpiringCache" should "remove expired values" in {
-    val cache = evaluateCache{
-      case (key, value) => false
-    }
+    val cache = evaluateCache(_ => false)
 
     cache.get(0).unsafeRunSync() shouldBe None
     cache.get(1).unsafeRunSync() shouldBe Some("bar")
   }
 
   it should "redeem expired values using redeem function" in {
-    val cache = evaluateCache{
-      case (key, value) => value == "foo"
-    }
+    val cache = evaluateCache(_ == "foo")
 
     cache.get(0).unsafeRunSync() shouldBe Some("foo")
     cache.get(1).unsafeRunSync() shouldBe Some("bar")

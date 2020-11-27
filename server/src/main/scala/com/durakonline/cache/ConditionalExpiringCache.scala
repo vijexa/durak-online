@@ -17,7 +17,7 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
 
   private def checkExpirationRepeatedly(
     interval: FiniteDuration,
-    redeemer: (K, V) => Boolean
+    redeemer: V => Boolean
   )(
     implicit T: Timer[F], C: Concurrent[F]
   ): F[Unit] = {
@@ -26,7 +26,7 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
         _.collect{
           case (key, (exp, value)) if exp > 0 => 
             (key, (exp - interval.length, value))
-          case (key, (exp, value)) if exp <= 0 && redeemer(key, value) => 
+          case (key, (exp, value)) if exp <= 0 && redeemer(value) => 
             (key, (expiresIn.length, value))
         }
       )
@@ -78,7 +78,7 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
   * [[ConditionalExpiringCache]] companion object
   */
 object ConditionalExpiringCache {
-  private def defaultRedeemer [K, V] (key: K, value: V) = false
+  private def defaultRedeemer [V] (value: V) = false
 
   /**
     * @param expiresIn Time in which newly added element is expired.
@@ -93,7 +93,7 @@ object ConditionalExpiringCache {
   def of[F[_] : Clock, K, V](
     expiresIn: FiniteDuration,
     checkOnExpirationsEvery: FiniteDuration,
-    redeemer: (K, V) => Boolean = defaultRedeemer _
+    redeemer: V => Boolean = defaultRedeemer _
   )(implicit T: Timer[F], C: Concurrent[F]): F[ConditionalExpiringCache[F, K, V]] = {
 
     for {
