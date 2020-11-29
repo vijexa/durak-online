@@ -1,4 +1,4 @@
-package com.durakonline
+package com.durakonline.model
 
 final case class Player (
   id: UUIDString,

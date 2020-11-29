@@ -1,6 +1,7 @@
-package com.durakonline
+package com.durakonline.model
 
 import com.durakonline.cache.ConditionalExpiringCache
+
 import eu.timepit.refined.auto._
 import scala.concurrent.duration._
 import cats.effect.Clock
