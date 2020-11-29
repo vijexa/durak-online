@@ -24,8 +24,10 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
     for {
       _ <- state.update(
         _.collect{
+          // collect only values that were not expired
           case (key, (exp, value)) if exp > 0 => 
             (key, (exp - interval.length, value))
+          // if value is expired it can still be collected if redeemer returns true
           case (key, (exp, value)) if exp <= 0 && redeemer(value) => 
             (key, (expiresIn.length, value))
         }
@@ -83,6 +85,7 @@ class ConditionalExpiringCache[F[_] : Clock : Monad, K, V] private (
   * [[ConditionalExpiringCache]] companion object
   */
 object ConditionalExpiringCache {
+  // default redeemer always fails
   private def defaultRedeemer [V] (value: V) = false
 
   /**
