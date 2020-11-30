@@ -17,6 +17,7 @@ lazy val root = (project in file("."))
     // so that case classes with private constructors
     // will have private .apply and .copy like in Scala 3
     scalacOptions += "-Xsource:3",
+    scalacOptions += "-Ymacro-annotations",
     libraryDependencies ++= Seq(
       "org.http4s"      %% "http4s-blaze-server" % http4sVersion,
       "org.http4s"      %% "http4s-blaze-client" % http4sVersion,
