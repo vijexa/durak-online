@@ -6,11 +6,13 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import scala.concurrent.ExecutionContext.global
 
+import cats.syntax.semigroupk._
+
 object HttpServer {
 
   def stream[F[_] : ConcurrentEffect : Timer]: Stream[F, Nothing] = {
     val httpApp = (
-      LobbyRoutes.helloWorldRoutes[F]
+      LobbyRoutes.helloWorldRoutes[F] <+> LobbyRoutes.refinedTestRoutes[F]
     ).orNotFound
 
     for {
