@@ -1,25 +1,43 @@
 package com.durakonline
 
-import cats.effect.{ConcurrentEffect, Timer}
-import fs2.Stream
+import com.durakonline.model._
+
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
+
+
 import scala.concurrent.ExecutionContext.global
 
-import cats.syntax.semigroupk._
+import cats.implicits._
+
+import cats.effect.{ConcurrentEffect, Timer}
+import cats.effect.ExitCode
 
 object HttpServer {
 
-  def stream[F[_] : ConcurrentEffect : Timer]: Stream[F, Nothing] = {
-    val httpApp = (
-      LobbyRoutes.helloWorldRoutes[F] <+> LobbyRoutes.refinedTestRoutes[F]
-    ).orNotFound
+  def run[F[_] : ConcurrentEffect : Timer] = {
+    
+    {
+      for {
+        lobby <- Lobby.of[F]
 
-    for {
-      exitCode <- BlazeServerBuilder[F](global)
-        .bindHttp(8080, "0.0.0.0")
-        .withHttpApp(httpApp)
-        .serve
-    } yield exitCode
-  }.drain
+        lobbyRoutes = new LobbyRoutes[F](lobby)
+
+        httpApp = (
+          lobbyRoutes.helloWorldRoutes <+> 
+          lobbyRoutes.refinedTestRoutes <+> 
+          lobbyRoutes.roomManagementRoutes <+> 
+          lobbyRoutes.playerManagementRoutes
+        ).orNotFound
+
+      } yield for {
+        exitCode <- BlazeServerBuilder[F](global)
+          .bindHttp(8080, "0.0.0.0")
+          .withHttpApp(httpApp)
+          .serve
+          .compile
+          .drain
+      } yield ExitCode.Success
+    }.flatten
+  }
 }
