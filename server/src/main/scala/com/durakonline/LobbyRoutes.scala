@@ -79,10 +79,26 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
               ).getOrElse(lobby)
             )  
 
-            resp <- Ok(s"new state is $newState")
+            resp <- Ok(Response.OK.apply.asJson) 
           } yield resp
           
         }
     }
+  }
+
+  def checkStateDebug: HttpRoutes[F] = HttpRoutes.of[F] {
+
+    // hacky way to check out current state with a secret url, shouldn't be exposed on production
+    case GET -> Root / "debug" / "lobby-state" / "291a7418-aec6-4c4d-9455-e9673f41dcb7-92ad1baa-f5a5-4534-a4b6-1d2df5989a84" => {
+      val pprintBW = pprint.PPrinter.BlackWhite
+      for {
+        lobby <- state.get
+        
+        formatted = pprintBW.apply(lobby)
+
+        resp <- Ok(s"Current state is $formatted")
+      } yield resp
+    }
+
   }
 }

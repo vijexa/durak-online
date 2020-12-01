@@ -27,7 +27,8 @@ object HttpServer {
           lobbyRoutes.helloWorldRoutes <+> 
           lobbyRoutes.refinedTestRoutes <+> 
           lobbyRoutes.roomManagementRoutes <+> 
-          lobbyRoutes.playerManagementRoutes
+          lobbyRoutes.playerManagementRoutes <+> 
+          lobbyRoutes.checkStateDebug
         ).orNotFound
 
       } yield for {
