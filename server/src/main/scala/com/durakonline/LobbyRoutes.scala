@@ -69,17 +69,25 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
         req.decodeJson[Request.CreatePlayer].flatMap { message =>
           
           for {
-            newState <- state.updateAndGet(lobby =>
-              lobby.addPlayerToRoom(
-                Player(
-                  RefType.applyRef[UUIDString](UUID.randomUUID().toString()).toOption.get,
-                  message.name
-                ), 
-                "lobby"
-              ).getOrElse(lobby)
+            newState <- state.modify(
+              lobby => {
+                val newId = UUID.randomUUID().toString()
+                val lobbyOpt = lobby.addPlayerToRoom(
+                  Player(
+                    RefType.applyRef[UUIDString](newId).toOption.get,
+                    message.name
+                  ), 
+                  "lobby"
+                )
+
+                (lobbyOpt.getOrElse(lobby), (newId -> lobbyOpt))
+              }
             )  
 
-            resp <- Ok(Response.OK.apply.asJson) 
+            resp <- newState match {
+              case (id, Some(lobby)) => Ok(Response.OK.apply.asJson).map(_.addCookie("id", id))
+              case (_,  None) => Ok(Response.Error("could not create new player").asJson)
+            }
           } yield resp
           
         }
