@@ -25,6 +25,10 @@ class RefinedTypesSpec extends AnyFlatSpec {
     RefType.applyRef[RoomPassword]("foo123").isRight shouldBe true
   }
 
+  it should "allow empty string" in {
+    RefType.applyRef[RoomPassword]("").isRight shouldBe true
+  }
+
   it should "not allow strings longer than 50 chars" in {
     RefType.applyRef[RoomPassword]("a" * 51).isLeft shouldBe true
   }
