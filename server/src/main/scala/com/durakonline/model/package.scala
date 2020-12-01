@@ -9,9 +9,11 @@ import shapeless.HNil
 import shapeless.::
 
 package object model {
+  type ResponseStatus = String Refined MatchesRegex["ok|error"]
+
   type RoomName = String Refined Size[Less[50]] 
   type RoomPassword = String Refined AllOf[
-    MatchesRegex["[A-z0-9]+"] :: 
+    MatchesRegex["$|[A-z0-9]+"] :: 
     Size[Less[50]] :: 
     HNil]
 
