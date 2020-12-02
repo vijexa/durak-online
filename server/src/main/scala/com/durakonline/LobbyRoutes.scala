@@ -53,9 +53,8 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
             )
 
             response <- newState.fold(
-              Ok(Response.Error("failed to create room").asJson)
-            )(_ =>
-              Ok(Response.OK.apply.asJson) 
+              error => Ok(Response.Error(s"failed to create room: $error").asJson),
+              _     => Ok(Response.OK.apply.asJson) 
             )
           } yield response
         }
@@ -85,8 +84,8 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
             )  
 
             resp <- newState match {
-              case (id, Some(lobby)) => Ok(Response.OK.apply.asJson).map(_.addCookie("id", id))
-              case (_,  None) => Ok(Response.Error("could not create new player").asJson)
+              case (id, Right(lobby)) => Ok(Response.OK.apply.asJson).map(_.addCookie("id", id))
+              case (_,  Left(error))  => Ok(Response.Error(s"could not create new player: $error").asJson)
             }
           } yield resp
           

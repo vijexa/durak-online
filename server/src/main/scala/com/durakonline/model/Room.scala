@@ -5,8 +5,12 @@ final case class Room (
   password: RoomPassword, 
   players: Map[UUIDString, Player]
 ) {
-  def addPlayer (player: Player): Room = 
-    this.copy(players = players + (player.id -> player))
+  def addPlayer (player: Player): Either[ErrorDescription, Room] = 
+    players.find{ case (_, currPlayer) => currPlayer.id == player.id }
+      match {
+        case None => Right(this.copy(players = players + (player.id -> player)))
+        case Some(_) => Left(s"player with such id already exists in room $name")
+      }
 }
 
 final object Room {

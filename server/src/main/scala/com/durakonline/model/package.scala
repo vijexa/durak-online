@@ -9,6 +9,8 @@ import shapeless.HNil
 import shapeless.::
 
 package object model {
+  type ErrorDescription = String
+
   type ResponseStatus = String Refined MatchesRegex["ok|error"]
 
   type RoomName = String Refined Size[Less[50]] 
