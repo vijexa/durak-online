@@ -43,6 +43,7 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
 
   def roomManagementRoutes: HttpRoutes[F] = {
     HttpRoutes.of[F] {
+
       case req @ POST -> Root / "create-room" =>
         req.decodeJson[Request.CreateRoom].flatMap { message => 
           
@@ -74,6 +75,33 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
             )
           } yield response
         }
+
+      case req @ POST -> Root / "remove-room" =>
+        req.decodeJson[Request.RemoveRoom].flatMap{ message => 
+          for {
+            newState <- state.modify{ lobby =>
+              val lobbyEither = for {
+                userId <- req.cookies.find(_.name == "id") match {
+                  case Some(value) => 
+                    RefType.applyRef[UUIDString](value.content)
+                  case None => Left("no id in cookies")
+                }
+
+                newLobby <- lobby.removeRoom(message.name, message.password, userId)
+              } yield newLobby
+
+              (lobbyEither.getOrElse(lobby), lobbyEither)
+            }
+
+            response <- newState.fold(
+              error =>
+                Ok(Response.Error(s"failed to remove room: $error").asJson),
+              _ =>
+                Ok(Response.OK.apply.asJson)
+            )
+          } yield response
+        }
+        
     }
   }
 

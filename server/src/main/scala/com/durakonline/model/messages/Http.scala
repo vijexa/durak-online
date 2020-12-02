@@ -11,9 +11,24 @@ object Http {
   object Request {
     @JsonCodec case class RefinedTest (id: UUIDString, password: RoomPassword)    
 
-    @JsonCodec case class CreatePlayer (name: UserName)
-    @JsonCodec case class CreateRoom (name: RoomName, password: RoomPassword)
-    @JsonCodec case class JoinRoom (playerId: UUIDString, roomName: RoomName, roomPassword: RoomPassword)
+    @JsonCodec case class CreatePlayer (
+      name: UserName
+    )
+
+    @JsonCodec case class CreateRoom (
+      name: RoomName, 
+      password: RoomPassword
+    )
+
+    @JsonCodec case class RemoveRoom (
+      name: RoomName, 
+      password: RoomPassword
+    )
+
+    @JsonCodec case class JoinRoom (
+      roomName: RoomName, 
+      roomPassword: RoomPassword
+    )
   }
 
   object Response {
@@ -24,7 +39,10 @@ object Http {
       def apply = new OK("ok")
     }
 
-    @JsonCodec case class Error private  (status: ResponseStatus, errorDescription: String)
+    @JsonCodec case class Error private  (
+      status: ResponseStatus, 
+      errorDescription: ErrorDescription
+    )
     object Error {
       def apply (errorDescription: String) = new Error("error", errorDescription)
     }

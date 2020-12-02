@@ -89,6 +89,7 @@ final case class Lobby private (
     *
     * @param roomName
     * @param password
+    * @param owner
     * @return
     */
   def addRoom (
@@ -122,17 +123,28 @@ final case class Lobby private (
     * Returns a lobby with specified room removed, if any
     *
     * @param roomName
+    * @param password
+    * @param userId
     * @return
     */
-  def removeRoom (roomName: RoomName, userId: UUIDString): Lobby =
+  def removeRoom (
+    roomName: RoomName, 
+    password: RoomPassword, 
+    userId: UUIDString
+  ): Either[ErrorDescription, Lobby] = {
     // TODO: maybe make it return either
-    if (roomName.value != "lobby")
-      this.copy(
-        rooms = rooms.filterNot { 
-          case (name, room) => name == roomName && room.owner == userId
-        }
-      )
-    else this
+    if (roomName.value != "lobby") {
+      
+      val newRooms = rooms.filterNot { 
+        case (name, room) => name == roomName && room.owner == userId
+      }
+      
+      if (newRooms.size == rooms.size) {
+        Left("room removal wasn't succesful")
+      } else this.copy(rooms = newRooms).asRight
+      
+    } else Left("cannot remove this room")
+  }
 }
 
 object Lobby {
