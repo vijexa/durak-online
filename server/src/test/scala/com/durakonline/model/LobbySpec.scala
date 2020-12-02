@@ -77,6 +77,10 @@ class LobbySpec extends AnyFlatSpec with IOApp {
     e.getAllPlayers.size shouldBe 1
     e.rooms("lobby").players.contains(player2.id) shouldBe true
     e.rooms("foobar").players.contains(player2.id) shouldBe false
+
+    e.removeRoom("lobby", player.id) shouldBe e
+    e.removeRoom("foobar", player.id) should not be e
+    e.removeRoom("foobar", player2.id) shouldBe e
   }
 
   def run(args: List[String]): IO[ExitCode] = ???

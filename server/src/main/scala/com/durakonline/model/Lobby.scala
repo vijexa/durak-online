@@ -128,7 +128,7 @@ final case class Lobby private (
     // TODO: maybe make it return either
     if (roomName.value != "lobby")
       this.copy(
-        rooms = rooms.filter { 
+        rooms = rooms.filterNot { 
           case (name, room) => name == roomName && room.owner == userId
         }
       )
