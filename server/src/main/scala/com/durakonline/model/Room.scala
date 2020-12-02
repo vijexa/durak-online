@@ -8,8 +8,10 @@ final case class Room (
   def addPlayer (player: Player): Either[ErrorDescription, Room] = 
     players.find{ case (_, currPlayer) => currPlayer.id == player.id }
       match {
-        case None => Right(this.copy(players = players + (player.id -> player)))
-        case Some(_) => Left(s"player with such id already exists in room $name")
+        case None    => 
+          Right(this.copy(players = players + (player.id -> player)))
+        case Some(_) => 
+          Left(s"player with such id already exists in room $name")
       }
 }
 

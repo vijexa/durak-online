@@ -33,7 +33,9 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
     HttpRoutes.of[F] {
       case req @ POST -> Root / "refined-test" =>
         req.decodeJson[Request.RefinedTest].flatMap { message =>
-          implicitly[Sync[F]].delay(println(s"\n\nid: ${message.id}, pwd: ${message.password}\n\n")) *>
+          implicitly[Sync[F]].delay(
+            println(s"\n\nid: ${message.id}, pwd: ${message.password}\n\n")
+          ) *>
           Ok("nice")
         }
     }
@@ -53,8 +55,10 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
             )
 
             response <- newState.fold(
-              error => Ok(Response.Error(s"failed to create room: $error").asJson),
-              _     => Ok(Response.OK.apply.asJson) 
+              error => 
+                Ok(Response.Error(s"failed to create room: $error").asJson),
+              _     => 
+                Ok(Response.OK.apply.asJson) 
             )
           } yield response
         }
@@ -84,8 +88,12 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
             )  
 
             resp <- newState match {
-              case (id, Right(lobby)) => Ok(Response.OK.apply.asJson).map(_.addCookie("id", id))
-              case (_,  Left(error))  => Ok(Response.Error(s"could not create new player: $error").asJson)
+              case (id, Right(lobby)) => 
+                Ok(Response.OK.apply.asJson).map(_.addCookie("id", id))
+              case (_,  Left(error))  => 
+                Ok(
+                  Response.Error(s"could not create new player: $error").asJson
+                )
             }
           } yield resp
           
@@ -93,10 +101,13 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
     }
   }
 
+  val superSecretUrl = "291a7418-aec6-4c4d-9455-e9673f41dcb7-" +
+    "92ad1baa-f5a5-4534-a4b6-1d2df5989a84"
   def checkStateDebug: HttpRoutes[F] = HttpRoutes.of[F] {
 
-    // hacky way to check out current state with a secret url, shouldn't be exposed on production
-    case GET -> Root / "debug" / "lobby-state" / "291a7418-aec6-4c4d-9455-e9673f41dcb7-92ad1baa-f5a5-4534-a4b6-1d2df5989a84" => {
+    // hacky way to check out current state with a secret 
+    // url, shouldn't be exposed on production
+    case GET -> Root / "debug" / "lobby-state" / superSecretUrl => {
       val pprintBW = pprint.PPrinter.BlackWhite
       for {
         lobby <- state.get

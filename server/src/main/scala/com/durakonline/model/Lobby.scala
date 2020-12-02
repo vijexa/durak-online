@@ -12,24 +12,55 @@ final case class Lobby private (
 ) {
   /**
     * Returns a flattened Map of all players in all rooms
+    * 
+    * @return
     */
   def getAllPlayers: Map[UUIDString, Player] =
     rooms.flatMap{ case (_, room) => room.players }
 
+  /**
+    * Returns a player with specified id, or an error
+    *
+    * @param id
+    * @return
+    */
   def getPlayer (id: UUIDString): Either[ErrorDescription, Player] =
     getAllPlayers.get(id) match {
       case Some(player) => player.asRight
-      case None         => Left(s"there is no player with specified id")
+      case None         => "there is no player with specified id".asLeft
     }
 
-  def addPlayerToRoom (player: Player, roomName: RoomName): Either[ErrorDescription, Lobby] = 
+  /**
+    * Returns lobby with player added to the room, or an error description
+    *
+    * @param player
+    * @param roomName
+    * @return
+    */
+  def addPlayerToRoom (
+    player: Player, 
+    roomName: RoomName
+  ): Either[ErrorDescription, Lobby] = 
     for {
-      _       <- getPlayer(player.id).fold(er => Right(er), _ => Left(s"player with this id already exists"))
+      _       <- getPlayer(player.id).fold(
+        er => Right(er), 
+        _ => s"player with this id already exists".asLeft
+      )
       room    <- getRoom(roomName)
       newRoom <- room.addPlayer(player)
     } yield this.copy(rooms = rooms - roomName + (roomName -> newRoom))
 
-  def addRoom (roomName: RoomName, password: RoomPassword): Either[ErrorDescription, Lobby] = 
+  /**
+    * Returns lobby with added room, or an error description
+    *
+    * @param roomName
+    * @param password
+    * @return
+    */
+  def addRoom (
+    roomName: RoomName, 
+    password: RoomPassword
+  ): Either[ErrorDescription, Lobby] = 
     getRoom(roomName) match {
         // create new room if there is no room with such name
         case Left(_)  => 
@@ -37,17 +68,28 @@ final case class Lobby private (
             rooms = rooms + (roomName -> Room(roomName, password, Map.empty))
           ).asRight
 
-        case Right(_) => Left(s"room with name $roomName already exists")
+        case Right(_) => s"room with name $roomName already exists".asLeft
       }
 
+  /**
+    * Returns a room with specified name, or an error description
+    *
+    * @param roomName
+    * @return
+    */
   def getRoom (roomName: RoomName): Either[ErrorDescription, Room] = 
     rooms.get(roomName) match {
       case Some(room) => room.asRight
-      case None       => Left(s"there is no room with name $roomName")
+      case None       => s"there is no room with name $roomName".asLeft
     }
 }
 
 object Lobby {
+  /**
+    * Creates new lobby with one empty 'lobby' room, and returns a Ref to it
+    *
+    * @return
+    */
   def of [F[_] : Concurrent]: F[Ref[F, Lobby]] = 
     Ref.of[F, Lobby](
       Lobby (
