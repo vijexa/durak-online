@@ -41,65 +41,67 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
     }
   }
 
+  def modifyStateAndReturnResponse[J](
+    req: org.http4s.Request[F],
+    json: J,
+    modifier: (Lobby, UUIDString, J) => Either[ErrorDescription, Lobby],
+    errorMessage: ErrorDescription
+  ) = for {
+    newState <- state.modify{ lobby =>
+      val lobbyEither = for {
+        userId <- req.cookies.find(_.name == "id") match {
+          case Some(value) => 
+            RefType.applyRef[UUIDString](value.content)
+          case None => Left("no id in cookies")
+        }
+
+        newLobby <- modifier(lobby, userId, json)
+      } yield newLobby
+
+      (lobbyEither.getOrElse(lobby), lobbyEither)
+    }
+
+    response <- newState.fold(
+      error =>
+        Ok(Response.Error(errorMessage + error).asJson),
+      _ =>
+        Ok(Response.OK.apply.asJson)
+    )
+  } yield response
+
   def roomManagementRoutes: HttpRoutes[F] = {
     HttpRoutes.of[F] {
 
       case req @ POST -> Root / "create-room" =>
         req.decodeJson[Request.CreateRoom].flatMap { message => 
           
-          for {
-            newState <- state.modify(
-              lobby => {
-                val lobbyEither = for {    
-                  userId <- req.cookies.find(_.name == "id") match {
-                    case Some(value) => 
-                      RefType.applyRef[UUIDString](value.content)
-                    case None => Left("no id in cookies")
-                  }
+          modifyStateAndReturnResponse [Request.CreateRoom] (
+            req, 
+            message, 
+            (lobby, id, message) => lobby.addRoom(
+              message.name, 
+              message.password, 
+              id
+            ),
+            "failed to create room: "
+          )
 
-                  newLobby <- lobby.addRoom(
-                    message.name, 
-                    message.password, 
-                    userId
-                  )
-                } yield newLobby
-                (lobbyEither.getOrElse(lobby), lobbyEither)
-              }
-            )
-
-            response <- newState.fold(
-              error => 
-                Ok(Response.Error(s"failed to create room: $error").asJson),
-              _     => 
-                Ok(Response.OK.apply.asJson) 
-            )
-          } yield response
         }
 
       case req @ POST -> Root / "remove-room" =>
         req.decodeJson[Request.RemoveRoom].flatMap{ message => 
-          for {
-            newState <- state.modify{ lobby =>
-              val lobbyEither = for {
-                userId <- req.cookies.find(_.name == "id") match {
-                  case Some(value) => 
-                    RefType.applyRef[UUIDString](value.content)
-                  case None => Left("no id in cookies")
-                }
 
-                newLobby <- lobby.removeRoom(message.name, message.password, userId)
-              } yield newLobby
+          modifyStateAndReturnResponse [Request.RemoveRoom] (
+            req, 
+            message, 
+            (lobby, id, message) => lobby.removeRoom(
+              message.name, 
+              message.password, 
+              id
+            ),
+            "failed to remove room: "
+          )
 
-              (lobbyEither.getOrElse(lobby), lobbyEither)
-            }
-
-            response <- newState.fold(
-              error =>
-                Ok(Response.Error(s"failed to remove room: $error").asJson),
-              _ =>
-                Ok(Response.OK.apply.asJson)
-            )
-          } yield response
         }
         
     }
