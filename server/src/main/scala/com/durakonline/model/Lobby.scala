@@ -78,6 +78,7 @@ final case class Lobby private (
     for {
       (roomName, room) <- 
         rooms.find{ case (_, room) => room.players.get(playerId).isDefined }
+
       newRoom = room.removePlayer(playerId)
 
     } yield this.copy(rooms = rooms - roomName + (roomName -> newRoom))
@@ -92,13 +93,14 @@ final case class Lobby private (
     */
   def addRoom (
     roomName: RoomName, 
-    password: RoomPassword
+    password: RoomPassword,
+    owner: UUIDString
   ): Either[ErrorDescription, Lobby] = 
     getRoom(roomName) match {
         // create new room if there is no room with such name
         case Left(_)  => 
           this.copy(
-            rooms = rooms + (roomName -> Room(roomName, password, Map.empty))
+            rooms = rooms + (roomName -> Room(roomName, password, owner, Map.empty))
           ).asRight
 
         case Right(_) => s"room with name $roomName already exists".asLeft
@@ -122,9 +124,14 @@ final case class Lobby private (
     * @param roomName
     * @return
     */
-  def removeRoom (roomName: RoomName): Lobby =
+  def removeRoom (roomName: RoomName, userId: UUIDString): Lobby =
+    // TODO: maybe make it return either
     if (roomName.value != "lobby")
-      this.copy(rooms = rooms.filter{ case (name, _) => name == roomName })
+      this.copy(
+        rooms = rooms.filter { 
+          case (name, room) => name == roomName && room.owner == userId
+        }
+      )
     else this
 }
 
@@ -140,7 +147,12 @@ object Lobby {
         Map[RoomName, Room](
           // players that are not yet in a room will be stored inside special
           // "lobby" room
-          ("lobby": RoomName) -> Room("lobby", "", Map.empty)
+          ("lobby": RoomName) -> Room(
+            "lobby", 
+            "", 
+            "9430e584-3a8b-4b92-ad6a-ef3d75bea3a5",
+            Map.empty
+          )
         )
       )
     )

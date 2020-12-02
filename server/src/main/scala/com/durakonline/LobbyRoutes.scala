@@ -49,8 +49,20 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
           for {
             newState <- state.modify(
               lobby => {
-                val lobbyOpt = lobby.addRoom(message.name, message.password)
-                (lobbyOpt.getOrElse(lobby), lobbyOpt)
+                val lobbyEither = for {    
+                  userId <- req.cookies.find(_.name == "id") match {
+                    case Some(value) => 
+                      RefType.applyRef[UUIDString](value.content)
+                    case None => Left("no id in cookies")
+                  }
+
+                  newLobby <- lobby.addRoom(
+                    message.name, 
+                    message.password, 
+                    userId
+                  )
+                } yield newLobby
+                (lobbyEither.getOrElse(lobby), lobbyEither)
               }
             )
 

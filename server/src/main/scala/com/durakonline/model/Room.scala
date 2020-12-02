@@ -2,7 +2,8 @@ package com.durakonline.model
 
 final case class Room (
   name: RoomName, 
-  password: RoomPassword, 
+  password: RoomPassword,
+  owner: UUIDString,
   players: Map[UUIDString, Player]
 ) {
   /**
