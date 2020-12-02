@@ -48,7 +48,40 @@ final case class Lobby private (
       )
       room    <- getRoom(roomName)
       newRoom <- room.addPlayer(player)
+    } yield this.copy(rooms = rooms + (roomName -> newRoom))
+
+  /**
+    * Returns lobby, where specified player was removed from whichever room it
+    * was in, if any, and then put into specified room
+    *
+    * @param player
+    * @param roomName
+    * @return
+    */
+  def movePlayerToRoom (
+    player: Player,
+    roomName: RoomName
+  ): Either[ErrorDescription, Lobby] = 
+    removePlayer(player.id)
+      .addPlayerToRoom(player, roomName)  
+
+  /**
+    * Returns lobby, where player with specified id was removed from whichever
+    * room it was in, if any
+    *
+    * @param playerId
+    * @return
+    */
+  def removePlayer (
+    playerId: UUIDString
+  ): Lobby = {
+    for {
+      (roomName, room) <- 
+        rooms.find{ case (_, room) => room.players.get(playerId).isDefined }
+      newRoom = room.removePlayer(playerId)
+
     } yield this.copy(rooms = rooms - roomName + (roomName -> newRoom))
+  }.getOrElse(this)
 
   /**
     * Returns lobby with added room, or an error description
@@ -82,6 +115,17 @@ final case class Lobby private (
       case Some(room) => room.asRight
       case None       => s"there is no room with name $roomName".asLeft
     }
+
+  /**
+    * Returns a lobby with specified room removed, if any
+    *
+    * @param roomName
+    * @return
+    */
+  def removeRoom (roomName: RoomName): Lobby =
+    if (roomName.value != "lobby")
+      this.copy(rooms = rooms.filter{ case (name, _) => name == roomName })
+    else this
 }
 
 object Lobby {
