@@ -177,6 +177,7 @@ object Lobby {
           ("lobby": RoomName) -> Room(
             "lobby", 
             "", 
+            // placeholder until I decide what to do with this 
             "9430e584-3a8b-4b92-ad6a-ef3d75bea3a5",
             Map.empty
           )
