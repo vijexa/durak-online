@@ -6,9 +6,10 @@ import cats.effect.Sync
 // and compositions, and also implement getting random card and reduce Deck
 
 final case class Deck(cards: Set[Card]) extends CardContainer {
-  def addCard(card: Card): Deck = ???
+  def addCard(card: Card): Deck = 
+    this.copy(cards = cards + card)
   
-  def removeCard(card: Card): Deck = 
+  protected def removeCard(card: Card): Deck = 
     this.copy(cards = cards - card)
 
   def drawCard[F[_] : Sync]: F[Option[(Card, Deck)]] = 

@@ -5,5 +5,5 @@ trait CardContainer {
 
   def addCard (card: Card): CardContainer
 
-  def removeCard (card: Card): CardContainer
+  protected def removeCard (card: Card): CardContainer
 }
