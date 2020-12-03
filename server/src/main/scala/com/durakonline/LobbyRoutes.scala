@@ -17,6 +17,7 @@ import eu.timepit.refined.auto._
 
 import java.util.UUID
 import eu.timepit.refined.api.RefType
+import io.circe.Decoder
 
 // TODO: REFACTOR THIS HORRIFIC NIGHTMARE
 
@@ -44,68 +45,60 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
     }
   }
 
-  def modifyStateAndReturnResponse[J](
+  def modifyStateFromJsonAndReturnResponse[J : Decoder](
     req: org.http4s.Request[F],
-    json: J,
     modifier: (Lobby, UUIDString, J) => Either[ErrorDescription, Lobby],
     errorMessage: ErrorDescription
-  ) = for {
-    newState <- state.modify{ lobby =>
-      val lobbyEither = for {
-        userId <- req.cookies.find(_.name == "id") match {
-          case Some(value) => 
-            RefType.applyRef[UUIDString](value.content)
-          case None => Left("no id in cookies")
-        }
+  ) = 
+  req.decodeJson[J].flatMap{ message => 
+    for {
+      newState <- state.modify{ lobby =>
+        val lobbyEither = for {
+          userId <- req.cookies.find(_.name == "id") match {
+            case Some(value) => 
+              RefType.applyRef[UUIDString](value.content)
+            case None => Left("no id in cookies")
+          }
 
-        newLobby <- modifier(lobby, userId, json)
-      } yield newLobby
+          newLobby <- modifier(lobby, userId, message)
+        } yield newLobby
 
-      (lobbyEither.getOrElse(lobby), lobbyEither)
-    }
+        (lobbyEither.getOrElse(lobby), lobbyEither)
+      }
 
-    response <- newState.fold(
-      error =>
-        Ok(Response.Error(errorMessage + error).asJson),
-      _ =>
-        Ok(Response.OK.apply.asJson)
-    )
-  } yield response
+      response <- newState.fold(
+        error =>
+          Ok(Response.Error(errorMessage + error).asJson),
+        _ =>
+          Ok(Response.OK.apply.asJson)
+      )
+    } yield response
+  }
 
   def roomManagementRoutes: HttpRoutes[F] = {
     HttpRoutes.of[F] {
 
       case req @ POST -> Root / "create-room" =>
-        req.decodeJson[Request.CreateRoom].flatMap { message => 
-          
-          modifyStateAndReturnResponse [Request.CreateRoom] (
-            req, 
-            message, 
-            (lobby, id, message) => lobby.addRoom(
-              message.name, 
-              message.password, 
-              id
-            ),
-            "failed to create room: "
-          )
-
-        }
+        modifyStateFromJsonAndReturnResponse [Request.CreateRoom] (
+          req, 
+          (lobby, id, message) => lobby.addRoom(
+            message.name, 
+            message.password, 
+            id
+          ),
+          "failed to create room: "
+        )
 
       case req @ POST -> Root / "remove-room" =>
-        req.decodeJson[Request.RemoveRoom].flatMap{ message => 
-
-          modifyStateAndReturnResponse [Request.RemoveRoom] (
-            req, 
-            message, 
-            (lobby, id, message) => lobby.removeRoom(
-              message.name, 
-              message.password, 
-              id
-            ),
-            "failed to remove room: "
-          )
-
-        }
+        modifyStateFromJsonAndReturnResponse [Request.RemoveRoom] (
+          req, 
+          (lobby, id, message) => lobby.removeRoom(
+            message.name, 
+            message.password, 
+            id
+          ),
+          "failed to remove room: "
+        )
         
     }
   }
@@ -146,25 +139,20 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
         }
 
       case req @ POST -> Root / "join-room" => 
-        req.decodeJson[Request.JoinRoom].flatMap{ message => 
-
-          modifyStateAndReturnResponse [Request.JoinRoom] (
-            req, 
-            message, 
-            (lobby, id, message) => {
-              for {
-                player   <- lobby.getPlayer(id)
-                newLobby <- lobby.movePlayerToRoom(
-                  player,
-                  message.roomName, 
-                  message.roomPassword
-                )
-              } yield newLobby
-            },
-            "failed to join room: "
-          )
-
-        }
+        modifyStateFromJsonAndReturnResponse [Request.JoinRoom] (
+          req, 
+          (lobby, id, message) => {
+            for {
+              player   <- lobby.getPlayer(id)
+              newLobby <- lobby.movePlayerToRoom(
+                player,
+                message.roomName, 
+                message.roomPassword
+              )
+            } yield newLobby
+          },
+          "failed to join room: "
+        )
     }
   }
 
@@ -172,8 +160,9 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
     "92ad1baa-f5a5-4534-a4b6-1d2df5989a84"
   def checkStateDebug: HttpRoutes[F] = HttpRoutes.of[F] {
 
-    // hacky way to check out current state with a secret 
+    // hacky way to check out current state with a "secret" 
     // url, shouldn't be exposed on production
+    // will be removed after I'm done here
     case GET -> Root / "debug" / "lobby-state" / superSecretUrl => {
       val pprintBW = pprint.PPrinter.BlackWhite
       for {
