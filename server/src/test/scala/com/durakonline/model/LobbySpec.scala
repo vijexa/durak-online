@@ -12,15 +12,15 @@ import org.scalatest.matchers.should.Matchers._
 class LobbySpec extends AnyFlatSpec with IOApp {
 
   "Lobby" should "work as expected" in {
-    def testAddPlayerToRoomRight (lobby: Lobby, player: Player, roomName: RoomName) =
-      lobby.addPlayerToRoom(player, roomName)
+    def testAddPlayerToRoomRight (lobby: Lobby, player: Player, roomName: RoomName, password: RoomPassword) =
+      lobby.addPlayerToRoom(player, roomName, password)
         .fold(
           er => fail(s"Lobby.addPlayerToRoom returned unexpected Left: $er"), 
           identity
         )
     
-    def testAddPlayerToRoomLeft (lobby: Lobby, player: Player, roomName: RoomName) =
-      lobby.addPlayerToRoom(player, "lobby")
+    def testAddPlayerToRoomLeft (lobby: Lobby, player: Player, roomName: RoomName, password: RoomPassword) =
+      lobby.addPlayerToRoom(player, roomName, password)
         .fold(
           identity, 
           _ => fail("Lobby.addPlayerToRoom returned unexpected Right")
@@ -31,12 +31,12 @@ class LobbySpec extends AnyFlatSpec with IOApp {
 
     val initial = Lobby.of[IO].unsafeRunSync().get.unsafeRunSync()
 
-    val a = testAddPlayerToRoomRight(initial, player, "lobby")
+    val a = testAddPlayerToRoomRight(initial, player, "lobby", "")
 
     a.getAllPlayers.size shouldBe 1
     a.getPlayer(uuid) shouldBe Right(player)
 
-    testAddPlayerToRoomLeft(a, player, "lobby")
+    testAddPlayerToRoomLeft(a, player, "lobby", "")
     
     val b = a.addRoom("foobar", "foobar123", player.id)
       .fold(
@@ -44,14 +44,14 @@ class LobbySpec extends AnyFlatSpec with IOApp {
         identity
       )
     
-    testAddPlayerToRoomLeft(b, player, "foobar")
+    testAddPlayerToRoomLeft(b, player, "foobar", "foobar123")
 
     val player2 = Player(
       "b437936d-9e86-44e3-a419-90805c131206", 
       "testplayer"
     )
 
-    val c = testAddPlayerToRoomRight(b, player2,"foobar")
+    val c = testAddPlayerToRoomRight(b, player2,"foobar", "foobar123")
 
     c.getAllPlayers.size shouldBe 2
 
@@ -69,7 +69,7 @@ class LobbySpec extends AnyFlatSpec with IOApp {
     d.rooms("lobby").players.contains(player2.id) shouldBe false
     d.rooms("foobar").players.contains(player2.id) shouldBe true
 
-    val e = d.movePlayerToRoom(player2, "lobby").fold(
+    val e = d.movePlayerToRoom(player2, "lobby", "").fold(
       er => fail(s"Lobby.movePlayerToRoom returned unexpected Left: $er"),
       identity
     )
@@ -78,9 +78,10 @@ class LobbySpec extends AnyFlatSpec with IOApp {
     e.rooms("lobby").players.contains(player2.id) shouldBe true
     e.rooms("foobar").players.contains(player2.id) shouldBe false
 
-    e.removeRoom("lobby", player.id) shouldBe e
-    e.removeRoom("foobar", player.id) should not be e
-    e.removeRoom("foobar", player2.id) shouldBe e
+    e.removeRoom("lobby", "", player.id).isLeft shouldBe true
+    e.removeRoom("foobar", "foobar123", player.id).isRight shouldBe true
+    e.removeRoom("foobar", "foobar123", player2.id).isLeft shouldBe true
+    e.removeRoom("foobar", "wrong", player.id).isLeft shouldBe true
   }
 
   def run(args: List[String]): IO[ExitCode] = ???
