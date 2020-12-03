@@ -35,18 +35,28 @@ final case class Lobby private (
     *
     * @param player
     * @param roomName
+    * @param roomPassword
     * @return
     */
   def addPlayerToRoom (
     player: Player, 
-    roomName: RoomName
+    roomName: RoomName,
+    roomPassword: RoomPassword
   ): Either[ErrorDescription, Lobby] = 
     for {
       _       <- getPlayer(player.id).fold(
         er => Right(er), 
         _ => s"player with this id already exists".asLeft
       )
+
       room    <- getRoom(roomName)
+
+      _       <- Either.cond(
+        room.password == roomPassword,
+        (),
+        "wrong password"
+      )
+
       newRoom <- room.addPlayer(player)
     } yield this.copy(rooms = rooms + (roomName -> newRoom))
 
@@ -56,14 +66,16 @@ final case class Lobby private (
     *
     * @param player
     * @param roomName
+    * @param roomPassword
     * @return
     */
   def movePlayerToRoom (
     player: Player,
-    roomName: RoomName
+    roomName: RoomName,
+    roomPassword: RoomPassword
   ): Either[ErrorDescription, Lobby] = 
     removePlayer(player.id)
-      .addPlayerToRoom(player, roomName)  
+      .addPlayerToRoom(player, roomName, roomPassword)
 
   /**
     * Returns lobby, where player with specified id was removed from whichever
@@ -136,7 +148,10 @@ final case class Lobby private (
     if (roomName.value != "lobby") {
       
       val newRooms = rooms.filterNot { 
-        case (name, room) => name == roomName && room.owner == userId
+        case (name, room) => 
+          name == roomName && 
+          room.owner == userId && 
+          room.password == password
       }
       
       if (newRooms.size == rooms.size) {

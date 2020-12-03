@@ -18,6 +18,9 @@ import eu.timepit.refined.auto._
 import java.util.UUID
 import eu.timepit.refined.api.RefType
 
+// TODO: REFACTOR THIS HORRIFIC NIGHTMARE
+
+
 class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
   val dsl = new Http4sDsl[F]{}
   import dsl._
@@ -122,7 +125,8 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
                     RefType.applyRef[UUIDString](newId).toOption.get,
                     message.name
                   ), 
-                  "lobby"
+                  "lobby",
+                  ""
                 )
 
                 (lobbyOpt.getOrElse(lobby), (newId -> lobbyOpt))
@@ -139,6 +143,27 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
             }
           } yield resp
           
+        }
+
+      case req @ POST -> Root / "join-room" => 
+        req.decodeJson[Request.JoinRoom].flatMap{ message => 
+
+          modifyStateAndReturnResponse [Request.JoinRoom] (
+            req, 
+            message, 
+            (lobby, id, message) => {
+              for {
+                player   <- lobby.getPlayer(id)
+                newLobby <- lobby.movePlayerToRoom(
+                  player,
+                  message.roomName, 
+                  message.roomPassword
+                )
+              } yield newLobby
+            },
+            "failed to join room: "
+          )
+
         }
     }
   }
