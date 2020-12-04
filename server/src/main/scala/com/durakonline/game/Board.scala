@@ -4,6 +4,8 @@ import cats.implicits._
 
 final case class Board (pairs: Vector[CardPair]) {
 
+  val pairsCount = pairs.size
+
   private def getAllCards: Vector[Card] =
     pairs.flatMap{
       case CardPair(attacker, defenderOpt) => Vector(attacker.some, defenderOpt)
@@ -20,13 +22,13 @@ final case class Board (pairs: Vector[CardPair]) {
       this.copy(pairs = pairs :+ CardPair(card, None)).some
     } else None 
 
-  // should allow to defend pairs if card is with same suit and better value
-  // or it is a trump
   def defend (card: Card, target: Card): Option[Board] = {
     val targetIndex = pairs.indexWhere(_.attacker == target)
     if (targetIndex > 0) {
       val targetPair = pairs(targetIndex)
 
+      // should allow to defend pairs if card is with same suit and better value
+      // or it is a trump
       if (
         targetPair.defender.isEmpty &&
         (targetPair.attacker.suit == card.suit || card.isTrump) &&
@@ -40,5 +42,9 @@ final case class Board (pairs: Vector[CardPair]) {
       } else None
     } else None
   }
+
+  def takeCards = getAllCards
+
+  def isThreatened: Boolean = pairs.exists(_.defender.isEmpty)
 
 }
