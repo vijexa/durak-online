@@ -9,10 +9,14 @@ class DockSpec extends AnyFlatSpec {
   def testDeck(deck: Deck, lowest: Int, size: Int) = {
     deck.cards.size shouldBe size
     deck.cards.count(_.value.value >= lowest) shouldBe size
-    
+
     Suit.values.map(suit =>
       deck.cards.count(_.suit == suit) shouldBe (size / 4)
     )
+
+    deck.cards.count(card => 
+      card.isTrump && card.suit == deck.trumpCard.suit
+    ) shouldBe (size / 4)
   }
 
   // 9, 10, J, Q, K, A
@@ -41,7 +45,6 @@ class DockSpec extends AnyFlatSpec {
         opt <- deck.drawCard[IO]
       } yield for {
         (card, newDeck) <- opt
-        _ = println(card)
       } yield card +: newDeck.cards shouldBe deck.cards
     }.unsafeRunSync
     
@@ -67,8 +70,6 @@ class DockSpec extends AnyFlatSpec {
         Hand(spareCards.drop(1).take(3).toSet)
       )
     ).get
-
-    println(hands2)
 
     hands2.foldLeft(0)((sum, hand) => sum + hand.size) shouldBe 10
     dealt2.size shouldBe 0
