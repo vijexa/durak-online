@@ -53,7 +53,7 @@ object Deck  {
     implicitly[Sync[F]].delay{
       val shuffled = Random.shuffle(
         Value.values
-          .filter(_.value >= lowestCard)
+          .filter(_.num >= lowestCard)
           .flatMap(value =>
             Suit.values.map(suit =>
               Card(value, suit)
