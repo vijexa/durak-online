@@ -8,7 +8,7 @@ class DockSpec extends AnyFlatSpec {
   
   def testDeck(deck: Deck, lowest: Int, size: Int) = {
     deck.cards.size shouldBe size
-    deck.cards.count(_.value.value >= lowest) shouldBe size
+    deck.cards.count(_.value.num >= lowest) shouldBe size
 
     Suit.values.map(suit =>
       deck.cards.count(_.suit == suit) shouldBe (size / 4)
@@ -53,7 +53,7 @@ class DockSpec extends AnyFlatSpec {
   "Deck.deal" should "deal cards correctly" in {
     val deck = Deck.of24[IO].unsafeRunSync()
     // cards that aren't used in deck above
-    val spareCards = Deck.of52[IO].unsafeRunSync().cards.filter(_.value.value < 9)
+    val spareCards = Deck.of52[IO].unsafeRunSync().cards.filter(_.value.num < 9)
 
     val emptyHand = Hand(Set.empty)
 
