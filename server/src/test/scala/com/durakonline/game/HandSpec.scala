@@ -11,12 +11,8 @@ class HandSpec extends AnyFlatSpec {
 
     val hand = Hand(Set(card1, card2))
 
-    hand.takeCard(card1).map{
-      case (_, hand2) => hand2 shouldBe Hand(Set(card2)) 
-    }
+    hand.takeCard(card1).map( _ shouldBe Hand(Set(card2)) )
     
-    hand.takeCard(card1).map{ 
-      case (_, hand2) => hand2.addCard(card1) shouldBe hand 
-    }
+    hand.takeCard(card1).map( _.addCard(card1) shouldBe hand )
   }
 }
