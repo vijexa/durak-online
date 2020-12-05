@@ -12,9 +12,15 @@ final case class Hand(cards: Set[Card]) extends CardContainer {
   protected def removeCard (card: Card): Hand = 
     this.copy(cards = cards - card)
 
-  def takeCard (card: Card): Option[(Card, Hand)] =
+  def takeCard (card: Card): Option[Hand] =
     for {
       _ <- cards.find(_ == card)
-    } yield (card, removeCard(card))
+    } yield removeCard(card)
+
+  def hasCard (card: Card) = cards.exists(_ == card)
   
+}
+
+object Hand {
+  def empty: Hand = Hand(Set.empty)
 }

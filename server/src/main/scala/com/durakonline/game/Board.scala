@@ -50,6 +50,8 @@ final case class Board (pairs: Vector[CardPair]) {
 
   def isThreatened: Boolean = pairs.exists(_.defender.isEmpty)
 
+  def isEmpty: Boolean = pairs.isEmpty
+
 }
 
 object Board {
