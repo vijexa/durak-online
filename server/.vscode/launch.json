@@ -6,6 +6,14 @@
   "configurations": [
     {
       "type": "scala",
+      "request": "launch",
+      "name": "GameStateSpec",
+      "testClass": "com.durakonline.game.GameStateSpec"
+    },
+
+
+    {
+      "type": "scala",
       "name": "Debug ",
       "request": "launch",
       "mainClass": "com.durakonline.Main",
