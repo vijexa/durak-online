@@ -5,7 +5,7 @@ import com.durakonline.model.Player
 import cats.implicits._
 import cats.effect.Sync
 
-final case class GameState private (
+final case class GameState (
   deck: Deck,
   board: Board,
   discardPile: DiscardPile,
@@ -14,8 +14,34 @@ final case class GameState private (
   attackerFinished: Boolean = false
 ) {
   
-  
+  // allows attacker to finish their move to allow other players to
+  // participate or for defender to take cards
+  def finishTurn (attacker: Player): Option[GameState] = 
+    for {
+      (attackerWithHand, index) <- getPlayerWithHand(attacker)
+      if attacker == whoseTurn
+    } yield this.copy(
+      attackerFinished = true
+    )
 
+  // allows defender to take cards from board and basically give up his turn
+  def takeCards (defender: Player): Option[GameState] = 
+    for {
+      (defenderWithHand, index) <- getPlayerWithHand(defender)
+
+      if defender == getDefender.player
+
+      if attackerFinished
+
+      cardsFromBoard = board.takeCards
+
+      defenderWithNewCards = defenderWithHand.addCardsToHand(cardsFromBoard)
+    } yield this.copy(
+      players = players.updated(index, defenderWithNewCards),
+      board = Board.empty,
+      attackerFinished = true,
+      whoseTurn = players(nextPlayerIndex(index)).player
+    )
 
   def attackPlayer (
     attacker: Player, 
@@ -24,15 +50,13 @@ final case class GameState private (
   ): Option[GameState] = for {
 
     // confirm that such attacker exists and get it and it's index
-    (attackerWithHand, attackerIndex) <- players.zipWithIndex find {
-      case (playerWH, index) => playerWH.player == attacker
-    }
+    (attackerWithHand, attackerIndex) <- getPlayerWithHand(attacker)
 
-    // check if attacker did his move for other players to be able to add cards
-    if attackerFinished
+    // check if this is an attackers turn or attacker did his move for other
+    // players to be able to add cards
+    if attacker == whoseTurn || attackerFinished
 
-    defenderWithHand <- players find defender.==
-
+    (defenderWithHand, _) <- getPlayerWithHand(defender)
     // can't attack if there are more pairs than cards in a defender hand
     // or more than 6 pairs
     if board.pairsCount <= defenderWithHand.hand.size && board.pairsCount <= 6
@@ -55,9 +79,7 @@ final case class GameState private (
   ): Option[GameState] = for {
 
     // confirm that this defender exists and get it and it's index
-    (defenderWithHand, defenderIndex) <- players.zipWithIndex find {
-      case (playerWH, index) => playerWH.player == defender
-    }
+    (defenderWithHand, defenderIndex) <- getPlayerWithHand(defender)
 
     // get defender hand without this card and check if it actually exists
     newDefenderWithHand <- defenderWithHand removeCardFromHand card
@@ -70,12 +92,28 @@ final case class GameState private (
     players = players.updated(defenderIndex, newDefenderWithHand)
   )
 
-  protected def nextPlayerIndex (prev: Int): Int =
-    if (prev < players.length - 1) prev + 1
-    else 0
+  /* private def getPlayerIndexWithStep (curr: Int, step: Int) =
+    if (curr < players.length - step) curr + step
+    else curr - (players.length - step) */
+  private def getPlayerIndexWithStep (curr: Int, step: Int) =
+    if (curr + step >= players.length) (players.length - curr) % step
+    else curr + step
+
+  protected def nextPlayerIndex (curr: Int): Int =
+    getPlayerIndexWithStep(curr, 1)
+
+  protected def playerAfterNextIndex (curr: Int): Int =
+    getPlayerIndexWithStep(curr, 2)
 
   protected def getDefender: PlayerWithHand = 
-    players(nextPlayerIndex(players.indexOf(whoseTurn)))
+    players(nextPlayerIndex(players.indexWhere(_.player == whoseTurn)))
+
+  protected def getPlayerWithHand (
+    player: Player
+  ): Option[(PlayerWithHand, Int)] =
+    players.zipWithIndex find {
+      case (playerWH, index) => playerWH.player == player
+    }
 }
 
 object GameState {
@@ -92,9 +130,9 @@ object GameState {
   ): F[Option[GameState]] = {
     for {
       deck <- mode match {
-        case DeckOf24 => Deck.of24[F]
-        case DeckOf36 => Deck.of36[F]
-        case DeckOf52 => Deck.of52[F]
+        case GameMode.DeckOf24 => Deck.of24[F]
+        case GameMode.DeckOf36 => Deck.of36[F]
+        case GameMode.DeckOf52 => Deck.of52[F]
       }
       
       emptyHands = players.map(_ => Hand.empty)
