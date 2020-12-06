@@ -14,7 +14,8 @@ final case class GameState private (
   attackerFinished: Boolean = false
 ) {
   
-  import PlayerWithHandImplicits._
+  
+
 
   def attackPlayer (
     attacker: Player, 
@@ -34,16 +35,14 @@ final case class GameState private (
 
     // can't attack if there are more pairs than cards in a defender hand
     // or more than 6 pairs
-    if board.pairsCount <= defenderWithHand.size && board.pairsCount <= 6
+    if board.pairsCount <= defenderWithHand.hand.size && board.pairsCount <= 6
     
     // get attacker hand without this card, and also confirm that attacker 
     // actually has this card 
-    newAttackerHand <- attackerWithHand takeCard card
+    newAttackerWithHand <- attackerWithHand removeCardFromHand card
 
     // try to attack; Board.attack handles everything else
     newBoard <- board attack card
-
-    newAttackerWithHand = attackerWithHand.copy(hand = newAttackerHand)
   } yield this.copy(
     board = newBoard,
     players = players.updated(attackerIndex, newAttackerWithHand)
@@ -61,8 +60,7 @@ final case class GameState private (
     }
 
     // get defender hand without this card and check if it actually exists
-    newDefenderHand <- defenderWithHand takeCard card
-    newDefenderWithHand = defenderWithHand.copy(hand = newDefenderHand)
+    newDefenderWithHand <- defenderWithHand removeCardFromHand card
 
     // try to defend
     newBoard <- board.defend(card, target)
@@ -76,7 +74,7 @@ final case class GameState private (
     if (prev < players.length - 1) prev + 1
     else 0
 
-  protected def getDefender: Player = 
+  protected def getDefender: PlayerWithHand = 
     players(nextPlayerIndex(players.indexOf(whoseTurn)))
 }
 

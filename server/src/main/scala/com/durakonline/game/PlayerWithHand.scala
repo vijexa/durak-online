@@ -5,9 +5,7 @@ import com.durakonline.model.Player
 final case class PlayerWithHand(
   player: Player,
   hand: Hand
-)
-
-object PlayerWithHandImplicits {
-  implicit def implicitPlayerWithHandToHand(pwh: PlayerWithHand) = pwh.hand
-  implicit def implicitPlayerWithHandToPlayer(pwh: PlayerWithHand) = pwh.player
+) {
+  def removeCardFromHand(card: Card): Option[PlayerWithHand] = 
+    hand.takeCard(card).map(hand => this.copy(hand = hand))
 }
