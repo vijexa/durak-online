@@ -139,9 +139,9 @@ class GameStateSpec extends AnyFlatSpec {
     val attacked = makeAttack
 
     // wrong player tries to finish turn
-    attacked.finishTurn(players.last).isEmpty shouldBe true
+    attacked.endAttackerTurn(players.last).isEmpty shouldBe true
 
-    attacked.finishTurn(players.head).get.attackerFinished shouldBe true
+    attacked.endAttackerTurn(players.head).get.attackerFinished shouldBe true
   }
 
   "GameState.takeCards" should "work as expected" in {
@@ -150,7 +150,7 @@ class GameStateSpec extends AnyFlatSpec {
     // tries to take cards on attacker turn
     attacked.takeCards(players.head).isEmpty shouldBe true
 
-    val finished = attacked.finishTurn(players.head).get
+    val finished = attacked.endAttackerTurn(players.head).get
 
     // wrong player tries to take cards
     finished.takeCards(players.head).isEmpty shouldBe true
@@ -161,4 +161,24 @@ class GameStateSpec extends AnyFlatSpec {
     taken.players.head.hand.size shouldBe 2
     taken.players.last.hand.size shouldBe 3
   }
+
+  "GameState.resolveTurn" should "work as expected" in {
+    import com.durakonline.game.TurnResolvement._
+    import AttackerResolvement._, DefenderResolvement._, OthersAttackResolvement._
+
+    makeAttack.resolveTurn shouldBe Set(AttackerCanAttack, DefenderCanDefend, OthersCannotAttack)
+    makeDefend.resolveTurn shouldBe Set(AttackerCanAttack, DefenderCannotDefend, OthersCannotAttack)
+
+    val attackedTwice = makeAttack.attackPlayer(
+      players.head, 
+      players.last, 
+      Card(Value.Six, Suit.Diamonds)
+    ).get
+
+    attackedTwice.resolveTurn shouldBe Set(AttackerCannotAttack, DefenderCanDefend, OthersCannotAttack)
+    attackedTwice.endAttackerTurn(players.head).get
+      .resolveTurn shouldBe Set(AttackerCannotAttack, DefenderCanDefend, OthersCanAttack)
+  }
+
+
 }

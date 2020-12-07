@@ -14,9 +14,46 @@ final case class GameState (
   attackerFinished: Boolean = false
 ) {
   
+  def resolveTurn: Set[TurnResolvement] = {
+    import com.durakonline.game.TurnResolvement._
+    import AttackerResolvement._, DefenderResolvement._, OthersAttackResolvement._
+
+    val (attacker, _) = getPlayerWithHand(whoseTurn).get
+    
+    val attackerResolvement = 
+      if (attacker.hand.cards.exists(card => board.canAttack(card))) 
+        AttackerCanAttack
+      else 
+        AttackerCannotAttack
+
+    val defenderResolvement = 
+      if (
+        getDefender.hand.cards.exists(card => 
+          board.pairs.exists(pair =>
+             board.canDefend(card, pair)
+          )
+        )
+      ) DefenderCanDefend
+      else 
+        DefenderCannotDefend
+
+    val othersAttackResolvement = /* attackerResolvement match {
+      case AttackerCanAttack =>  */
+        if (attackerFinished) 
+          OthersCanAttack 
+        else 
+          OthersCannotAttack
+      /* case AttackerCannotAttack => OthersCannotAttack
+    } */
+
+    // TODO: resolve if game is finished
+    
+    Set(attackerResolvement, defenderResolvement, othersAttackResolvement)
+  }
+
   // allows attacker to finish their move to allow other players to
   // participate or for defender to take cards
-  def finishTurn (attacker: Player): Option[GameState] = 
+  def endAttackerTurn (attacker: Player): Option[GameState] = 
     for {
       (attackerWithHand, index) <- getPlayerWithHand(attacker)
       if attacker == whoseTurn
@@ -39,7 +76,7 @@ final case class GameState (
     } yield this.copy(
       players = players.updated(index, defenderWithNewCards),
       board = Board.empty,
-      attackerFinished = true,
+      attackerFinished = false,
       whoseTurn = players(nextPlayerIndex(index)).player
     )
 
@@ -92,9 +129,6 @@ final case class GameState (
     players = players.updated(defenderIndex, newDefenderWithHand)
   )
 
-  /* private def getPlayerIndexWithStep (curr: Int, step: Int) =
-    if (curr < players.length - step) curr + step
-    else curr - (players.length - step) */
   private def getPlayerIndexWithStep (curr: Int, step: Int) =
     if (curr + step >= players.length) (players.length - curr) % step
     else curr + step
