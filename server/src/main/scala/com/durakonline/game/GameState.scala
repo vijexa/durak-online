@@ -13,7 +13,7 @@ final case class GameState (
   whoseTurn: Player,
   attackerFinished: Boolean = false
 ) {
-  
+
   def resolveTurn: Set[TurnResolvement] = {
     import com.durakonline.game.TurnResolvement._
     import AttackerResolvement._, DefenderResolvement._, OthersAttackResolvement._
@@ -49,6 +49,41 @@ final case class GameState (
     // TODO: resolve if game is finished
     
     Set(attackerResolvement, defenderResolvement, othersAttackResolvement)
+  }
+
+  private def finishTurn: Option[GameState] = {
+    val (newDefender, newDiscardPile) = 
+      if (board.isThreatened) (
+        getDefender.addCardsToHand(board.takeCards),
+        discardPile
+      ) else (
+        getDefender,
+        discardPile.addCards(board.takeCards)
+      )
+
+    val defenderIndex = players.indexWhere(_.player == newDefender.player)
+
+    val playersWithUpdatedDefender = players.updated(defenderIndex, newDefender)
+
+    val whoseTurn = 
+      if (board.isThreatened) players(nextPlayerIndex(defenderIndex)).player
+      else newDefender.player
+
+    // TODO: take look at this with clear head and write tests
+
+    for {
+      (newDeck, newHands) <- deck.deal(playersWithUpdatedDefender.map(_.hand))
+    } yield this.copy(
+      deck = newDeck,
+      board = Board.empty,
+      discardPile = newDiscardPile,
+      players = players zip newHands map { 
+        case (pwh, newHand) => pwh.copy(hand = newHand) 
+      },
+      whoseTurn = whoseTurn,
+      attackerFinished = false
+    )
+    
   }
 
   // allows attacker to finish their move to allow other players to
