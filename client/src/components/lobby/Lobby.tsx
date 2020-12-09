@@ -7,8 +7,8 @@ import sampleRoomData from '../../sample-data/sampleRoomData'
 const Container = styled.div`
   display: flex;
   min-width: 50%;
-  background-color: white;
-  color: black;
+  max-width: 90%;
+  color: #1d1d1d;
 `
 
 interface LobbyProps {

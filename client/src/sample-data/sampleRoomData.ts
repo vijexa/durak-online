@@ -19,6 +19,12 @@ const data: RoomData[] = [
     mode: "52 cards",
     playerCount: 5,
     maxPlayers: 6
+  },
+  {
+    name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    mode: "24 cards",
+    playerCount: 0,
+    maxPlayers: 2
   } 
 ]
 
