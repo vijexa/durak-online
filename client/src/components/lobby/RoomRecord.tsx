@@ -45,14 +45,13 @@ const RoomName = styled(OverflowingSpan)`
   text-align: left;
   padding-left: 1em;
   padding-right: 1em;
-
-  flex-grow: 1;
 `
 
 const GameMode = styled(OverflowingSpan)`
   font-size: 0.8em;
   width: 5em;
   margin-left: auto;
+  flex-shrink: 0;
 
   border-left: 1px solid #a7a7a7;
   border-right: 1px solid #a7a7a7;
@@ -63,6 +62,7 @@ const PlayerCount = styled(OverflowingSpan)`
   width: 2em;
   margin-right: 0.5em;
   padding-left: 0.25em;
+  flex-shrink: 0;
 `
 
 interface RoomRecordProps {
