@@ -1,30 +1,26 @@
 
-import RoomData from '../model/RoomData'
+import {RoomData} from '../model/RoomData'
 
 const data: RoomData[] = [
   {
-    name: "My cool room",
-    mode: "36 cards",
-    playerCount: 2,
-    maxPlayers: 4
+    roomName: "My cool room",
+    mode: "of36",
+    playerCount: 2
   },
   {
-    name: "Foobar's room",
-    mode: "24 cards",
-    playerCount: 2,
-    maxPlayers: 2
+    roomName: "Foobar's room",
+    mode: "of24",
+    playerCount: 2
   },
   {
-    name: "Tutturu 🦄",
-    mode: "52 cards",
-    playerCount: 5,
-    maxPlayers: 6
+    roomName: "Tutturu 🦄",
+    mode: "of52",
+    playerCount: 5
   },
   {
-    name: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    mode: "24 cards",
-    playerCount: 0,
-    maxPlayers: 2
+    roomName: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    mode: "of24",
+    playerCount: 0
   } 
 ]
 

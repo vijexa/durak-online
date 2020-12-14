@@ -1,7 +1,7 @@
 import React from 'react'
 import styled, { css } from 'styled-components'
 
-import RoomData from '../../model/RoomData'
+import {GameMode, RoomData} from '../../model/RoomData'
 
 interface ContainerProps {
   disabled: boolean
@@ -41,13 +41,13 @@ const OverflowingSpan = styled.span`
   text-overflow: ellipsis;
 `
 
-const RoomName = styled(OverflowingSpan)`
+const RoomNameSpan = styled(OverflowingSpan)`
   text-align: left;
   padding-left: 1em;
   padding-right: 1em;
 `
 
-const GameMode = styled(OverflowingSpan)`
+const GameModeSpan = styled(OverflowingSpan)`
   font-size: 0.8em;
   width: 5em;
   margin-left: auto;
@@ -57,7 +57,7 @@ const GameMode = styled(OverflowingSpan)`
   border-right: 1px solid #a7a7a7;
 `
 
-const PlayerCount = styled(OverflowingSpan)`
+const PlayerCountSpan = styled(OverflowingSpan)`
   font-size: 0.8em;
   width: 2em;
   margin-right: 0.5em;
@@ -65,19 +65,39 @@ const PlayerCount = styled(OverflowingSpan)`
   flex-shrink: 0;
 `
 
+function maxPlayersFromGameMode (mode: GameMode): number {
+  switch (mode) {
+    case "lobby": return NaN
+    case "of24": return 2
+    case "of36": return 4
+    case "of52": return 6
+  }
+}
+
+function gameModeToHumanReadable (mode: GameMode): string {
+  switch (mode) {
+    case "lobby": return "lobby"
+    case "of24": return "24 cards"
+    case "of36": return "36 cards"
+    case "of52": return "52 cards"
+  }
+}
+
 interface RoomRecordProps {
   room: RoomData
 }
 
 export default function RoomRecord (props: RoomRecordProps) {
 
-  const isDisabled = props.room.playerCount === props.room.maxPlayers
+  const maxPlayers: number = maxPlayersFromGameMode(props.room.mode)
+
+  const isDisabled: boolean = props.room.playerCount === maxPlayers
 
   return (
     <Container disabled={isDisabled}>
-      <RoomName>{props.room.name}</RoomName>
-      <GameMode>{props.room.mode}</GameMode>
-      <PlayerCount>{props.room.playerCount}/{props.room.maxPlayers}</PlayerCount>
+      <RoomNameSpan>{props.room.roomName}</RoomNameSpan>
+      <GameModeSpan>{gameModeToHumanReadable(props.room.mode)}</GameModeSpan>
+      <PlayerCountSpan>{props.room.playerCount}/{maxPlayers}</PlayerCountSpan>
     </Container>
   )
 }
