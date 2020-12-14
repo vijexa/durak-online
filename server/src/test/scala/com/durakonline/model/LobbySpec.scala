@@ -6,6 +6,7 @@ import cats.effect._
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
+import com.durakonline.game.GameMode
 
 // yeah it's unreadable but I don't have much time sorryyyyy AAAAAAAAAAAAAAAA
 
@@ -38,7 +39,7 @@ class LobbySpec extends AnyFlatSpec with IOApp {
 
     testAddPlayerToRoomLeft(a, player, "lobby", "")
     
-    val b = a.addRoom("foobar", "foobar123", player.id)
+    val b = a.addRoom("foobar", "foobar123", player.id, GameMode.DeckOf24)
       .fold(
         er => fail(s"Lobby.addRoom returned unexpected Left: $er"),
         identity
@@ -55,7 +56,7 @@ class LobbySpec extends AnyFlatSpec with IOApp {
 
     c.getAllPlayers.size shouldBe 2
 
-    c.addRoom("foobar", "foobar123", player.id)
+    c.addRoom("foobar", "foobar123", player.id, GameMode.DeckOf24)
       .fold(
         identity,
         _ => fail("Lobby.addRoom returned unexpected Right")

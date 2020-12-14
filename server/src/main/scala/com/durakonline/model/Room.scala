@@ -1,10 +1,13 @@
 package com.durakonline.model
 
+import com.durakonline.game.GameMode
+
 final case class Room (
   name: RoomName, 
   password: RoomPassword,
   owner: UUIDString,
-  players: Map[UUIDString, Player]
+  players: Map[UUIDString, Player],
+  mode: GameMode
 ) {
   /**
     * Returns room with added player, or an error description

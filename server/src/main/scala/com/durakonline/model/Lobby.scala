@@ -6,6 +6,7 @@ import cats.effect.Concurrent
 import cats.effect.concurrent.Ref
 
 import eu.timepit.refined.auto._
+import com.durakonline.game.GameMode
 
 final case class Lobby private (
   rooms: Map[RoomName, Room]
@@ -107,13 +108,20 @@ final case class Lobby private (
   def addRoom (
     roomName: RoomName, 
     password: RoomPassword,
-    owner: UUIDString
+    owner: UUIDString,
+    mode: GameMode
   ): Either[ErrorDescription, Lobby] = 
     getRoom(roomName) match {
         // create new room if there is no room with such name
         case Left(_)  => 
           this.copy(
-            rooms = rooms + (roomName -> Room(roomName, password, owner, Map.empty))
+            rooms = rooms + (roomName -> Room(
+              roomName, 
+              password, 
+              owner, 
+              Map.empty, 
+              mode
+            ))
           ).asRight
 
         case Right(_) => s"room with name $roomName already exists".asLeft
@@ -179,7 +187,8 @@ object Lobby {
             "", 
             // placeholder until I decide what to do with this 
             "9430e584-3a8b-4b92-ad6a-ef3d75bea3a5",
-            Map.empty
+            Map.empty,
+            GameMode.LobbyMode
           )
         )
       )

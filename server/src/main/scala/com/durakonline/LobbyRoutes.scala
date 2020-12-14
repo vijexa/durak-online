@@ -84,7 +84,8 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
           (lobby, id, message) => lobby.addRoom(
             message.name, 
             message.password, 
-            id
+            id,
+            message.mode
           ),
           "failed to create room: "
         )
@@ -99,7 +100,18 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
           ),
           "failed to remove room: "
         )
-        
+
+      case req @ GET -> Root / "all-rooms" =>
+        for {
+          lobby <- state.get
+          response <- Ok(Response.RoomsList(lobby).asJson)
+        } yield response
+
+      case req @ GET -> Root / "get-all-player-names" =>
+        for {
+          lobby <- state.get
+          response <- Ok(Response.PlayersList(lobby).asJson)
+        } yield response
     }
   }
 
