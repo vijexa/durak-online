@@ -78,10 +78,14 @@ object Http {
       def apply (errorDescription: String) = new Error("error", errorDescription)
     }
 
-    @JsonCodec case class RoomData (roomName: RoomName, mode: GameMode)
+    @JsonCodec case class RoomData (
+      roomName: RoomName, 
+      mode: GameMode, 
+      playerCount: Int
+    )
     object RoomData {
       def apply (room: Room): RoomData = 
-        RoomData(room.name, room.mode)
+        RoomData(room.name, room.mode, room.players.size)
     }
     
     @JsonCodec case class RoomsList (rooms: List[RoomData])
