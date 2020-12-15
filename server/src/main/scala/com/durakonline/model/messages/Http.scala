@@ -94,10 +94,14 @@ object Http {
         RoomsList(lobby.rooms.values.map(RoomData.apply).toList)
     }
 
-    @JsonCodec case class PlayersList (players: List[UserName])
+    @JsonCodec case class PlayerData (name: UserName, id: Option[UUIDString])
+
+    @JsonCodec case class PlayersList (players: List[PlayerData])
     object PlayersList {
       def apply (lobby: Lobby): PlayersList = 
-        PlayersList(lobby.getAllPlayers.values.map(_.name).toList)
+        PlayersList(lobby.getAllPlayers.values.map(player =>
+          PlayerData(player.name, None)
+        ).toList)
     }
   }
 }

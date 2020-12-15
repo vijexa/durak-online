@@ -12,6 +12,7 @@ const Container = styled.div`
   height: 1.75em;
   border-radius: 0.5em;
 
+  padding: 0 1em 0 1em;
   background-color: white;
 `
 
