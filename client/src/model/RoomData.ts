@@ -21,6 +21,14 @@ export const RoomDataCodec = Codec.interface({
 
 export type RoomData = GetType<typeof RoomDataCodec>
 
+export const RoomCreationDataCodec = Codec.interface({
+  name: string,
+  password: string,
+  mode: GameModeCodec 
+})
+
+export type RoomCreationData = GetType<typeof RoomCreationDataCodec>
+
 export const RoomDataListCodec = Codec.interface({
   rooms: array(RoomDataCodec)
 })

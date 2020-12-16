@@ -3,8 +3,8 @@ import styled from 'styled-components'
 
 import { RoomData, RoomDataListCodec } from '../../model/RoomData'
 import RoomRecord from './RoomRecord'
-
 import fetchJson from '../../util/fetchJsonGet'
+import CreateRoomButton from './CreateRoomButton'
 
 const Container = styled.div`
   display: flex;
@@ -43,6 +43,7 @@ export default function RoomList (props: RoomListProps) {
           <RoomRecord key={room.roomName} room={room}/>
         )
       }
+      <CreateRoomButton />
     </Container>
   )
 }
