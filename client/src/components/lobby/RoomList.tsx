@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 
-import { RoomData, RoomDataListCodec, RoomDataList } from '../../model/RoomData'
+import { RoomData, RoomDataListCodec } from '../../model/RoomData'
 import RoomRecord from './RoomRecord'
 
-import fetchJson from '../../util/fetchJson'
+import fetchJson from '../../util/fetchJsonGet'
 
 const Container = styled.div`
   display: flex;

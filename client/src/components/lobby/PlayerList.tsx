@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 
-import fetchJson from '../../util/fetchJson'
+import fetchJson from '../../util/fetchJsonGet'
 import { PlayerData, PlayerDataListCodec } from '../../model/PlayerData'
 
 const Container = styled.div`

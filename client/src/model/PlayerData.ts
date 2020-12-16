@@ -1,5 +1,5 @@
 
-import { Codec, GetType, string, array, optional } from 'purify-ts/Codec'
+import { Codec, GetType, string, array } from 'purify-ts/Codec'
 
 export const PlayerDataCodec = Codec.interface({
   name: string
