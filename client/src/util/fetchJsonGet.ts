@@ -2,12 +2,12 @@
 import { Codec } from 'purify-ts/Codec'
 import { Either, Left } from 'purify-ts/Either'
 
-export default function fetchRooms <T> (
+export default function fetchJsonGet <T> (
   uri: string,
   codec: Codec<T>
 ): Promise<Either<string, T>> {
   return (
-    fetch("http://localhost:8010/proxy/" + uri)
+    fetch('/' + uri)
       .then(response =>
         response.json()
           .then(json =>
