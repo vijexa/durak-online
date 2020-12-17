@@ -4,7 +4,6 @@ import styled from 'styled-components'
 import RoomList from './RoomList'
 import LobbyHeader from './LobbyHeader'
 import PlayerList from './PlayerList'
-import LoginOverlay from './LoginOverlay'
 
 const ContainerVertical = styled.div`
   display: flex;
@@ -40,7 +39,6 @@ export default function Lobby (props: LobbyProps) {
         <RoomList />
       </ContainerVertical>
       <PlayerList />
-      <LoginOverlay />
     </ContainerHorizontal>
   )
 }
