@@ -1,8 +1,12 @@
-import React from 'react';
+import React from 'react'
 import styled from 'styled-components'
-import Lobby from './components/lobby/Lobby';
+import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
+
+import Lobby from './components/lobby/Lobby'
+import Room from './components/room/Room'
 
 import backgroundTexture from './pool-table.png'
+
 
 const StyledApp = styled.div`
   text-align: center;
@@ -19,9 +23,18 @@ const StyledApp = styled.div`
 
 function App() {
   return (
-    <StyledApp>
-      <Lobby />
-    </StyledApp>
+    <Router>
+      <StyledApp>
+        <Switch>
+          <Route path="/room/:roomName">
+            <Room />
+          </Route>
+          <Route path="/">
+            <Lobby />
+          </Route>
+        </Switch>
+      </StyledApp>
+    </Router>
   );
 }
 

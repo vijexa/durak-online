@@ -34,3 +34,10 @@ export const RoomDataListCodec = Codec.interface({
 })
 
 export type RoomDataList = GetType<typeof RoomDataListCodec>
+
+export const RoomNameWithPasswordCodec = Codec.interface({
+  roomName: string,
+  roomPassword: string
+})
+
+export type RoomNameWithPassword = GetType<typeof RoomNameWithPasswordCodec>

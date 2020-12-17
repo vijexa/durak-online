@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import styled, { css } from 'styled-components'
 
 import {GameMode, RoomData} from '../../model/RoomData'
@@ -65,6 +66,11 @@ const PlayerCountSpan = styled(OverflowingSpan)`
   flex-shrink: 0;
 `
 
+const StyledLink = styled(Link)`
+  color: inherit;
+  text-decoration: none;
+`
+
 function maxPlayersFromGameMode (mode: GameMode): number {
   switch (mode) {
     case "lobby": return NaN
@@ -94,10 +100,12 @@ export default function RoomRecord (props: RoomRecordProps) {
   const isDisabled: boolean = props.room.playerCount === maxPlayers
 
   return (
-    <Container disabled={isDisabled}>
-      <RoomNameSpan>{props.room.roomName}</RoomNameSpan>
-      <GameModeSpan>{gameModeToHumanReadable(props.room.mode)}</GameModeSpan>
-      <PlayerCountSpan>{props.room.playerCount}/{maxPlayers}</PlayerCountSpan>
-    </Container>
+    <StyledLink to={`room/${props.room.roomName}`}>
+      <Container disabled={isDisabled}>
+        <RoomNameSpan>{props.room.roomName}</RoomNameSpan>
+        <GameModeSpan>{gameModeToHumanReadable(props.room.mode)}</GameModeSpan>
+        <PlayerCountSpan>{props.room.playerCount}/{maxPlayers}</PlayerCountSpan>
+      </Container>
+    </StyledLink>
   )
 }
