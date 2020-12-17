@@ -1,10 +1,10 @@
 package com.durakonline
 
 import com.durakonline.model._
+import com.durakonline.game.network.WebsocketRoutes
 
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
-
 
 import scala.concurrent.ExecutionContext.global
 
@@ -22,12 +22,14 @@ object HttpServer {
         lobby <- Lobby.of[F]
 
         lobbyRoutes = new LobbyRoutes[F](lobby)
+        wsRoutes = new WebsocketRoutes[F]
 
         httpApp = (
           lobbyRoutes.helloWorldRoutes <+> 
           lobbyRoutes.refinedTestRoutes <+> 
           lobbyRoutes.roomManagementRoutes <+> 
           lobbyRoutes.playerManagementRoutes <+> 
+          wsRoutes.routes <+>
           lobbyRoutes.checkStateDebug
         ).orNotFound
 
