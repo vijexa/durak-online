@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
 
 import Lobby from './components/lobby/Lobby'
 import Room from './components/room/Room'
-import LoginOverlay from './components/lobby/LoginOverlay'
+import LoginOverlay from './components/LoginOverlay'
 
 import backgroundTexture from './pool-table.png'
 

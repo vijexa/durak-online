@@ -3,10 +3,10 @@ import styled from 'styled-components'
 import Popup from 'reactjs-popup'
 import { useCookies } from 'react-cookie'
 
-import fetchJsonPost from '../../util/fetchJsonPost'
-import { Status, StatusCodec } from '../../model/Status'
-import { PlayerData } from '../../model/PlayerData'
-import PopupContainer from './PopupContainer'
+import fetchJsonPost from '../util/fetchJsonPost'
+import { Status, StatusCodec } from '../model/Status'
+import { PlayerData } from '../model/PlayerData'
+import PopupContainer from './lobby/PopupContainer'
 
 interface LoginOverlayProps {
 
