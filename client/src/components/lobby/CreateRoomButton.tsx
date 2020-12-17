@@ -60,6 +60,7 @@ export default function CreateRoomButton (props: CreateRoomButtonProps) {
     <Trigger onClick={_ => setIsOpen(true)} >+ Create new room
       <Popup 
         open={isOpen}
+        onClose={() => setIsOpen(false)}
         overlayStyle={{background: 'rgba(100, 100, 100, 0.5)'}}
         modal
       >
