@@ -12,17 +12,18 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.circe._
 
 import io.circe.syntax._
+import io.circe.Decoder
 
 import eu.timepit.refined.auto._
 
 import java.util.UUID
+
 import eu.timepit.refined.api.RefType
-import io.circe.Decoder
 
 // TODO: REFACTOR THIS HORRIFIC NIGHTMARE
 
 
-class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
+class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby[F]]) {
   val dsl = new Http4sDsl[F]{}
   import dsl._
 
@@ -47,7 +48,7 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby]) {
 
   def modifyStateFromJsonAndReturnResponse[J : Decoder](
     req: org.http4s.Request[F],
-    modifier: (Lobby, UUIDString, J) => Either[ErrorDescription, Lobby],
+    modifier: (Lobby[F], UUIDString, J) => Either[ErrorDescription, Lobby[F]],
     errorMessage: ErrorDescription
   ) = 
   req.decodeJson[J].flatMap{ message => 

@@ -7,9 +7,10 @@ import cats.effect.concurrent.Ref
 
 import eu.timepit.refined.auto._
 import com.durakonline.game.GameMode
+import com.durakonline.game.GameState
 
-final case class Lobby private (
-  rooms: Map[RoomName, Room]
+final case class Lobby [F[_]] private (
+  rooms: Map[RoomName, Room[F]]
 ) {
   /**
     * Returns a flattened Map of all players in all rooms
@@ -43,7 +44,7 @@ final case class Lobby private (
     player: Player, 
     roomName: RoomName,
     roomPassword: RoomPassword
-  ): Either[ErrorDescription, Lobby] = 
+  ): Either[ErrorDescription, Lobby[F]] = 
     for {
       _       <- getPlayer(player.id).fold(
         er => Right(er), 
@@ -74,7 +75,7 @@ final case class Lobby private (
     player: Player,
     roomName: RoomName,
     roomPassword: RoomPassword
-  ): Either[ErrorDescription, Lobby] = 
+  ): Either[ErrorDescription, Lobby[F]] = 
     removePlayer(player.id)
       .addPlayerToRoom(player, roomName, roomPassword)
 
@@ -87,7 +88,7 @@ final case class Lobby private (
     */
   def removePlayer (
     playerId: UUIDString
-  ): Lobby = {
+  ): Lobby[F] = {
     for {
       (roomName, room) <- 
         rooms.find{ case (_, room) => room.players.get(playerId).isDefined }
@@ -110,17 +111,18 @@ final case class Lobby private (
     password: RoomPassword,
     owner: UUIDString,
     mode: GameMode
-  ): Either[ErrorDescription, Lobby] = 
+  ): Either[ErrorDescription, Lobby[F]] = 
     getRoom(roomName) match {
         // create new room if there is no room with such name
         case Left(_)  => 
           this.copy(
-            rooms = rooms + (roomName -> Room(
+            rooms = rooms + (roomName -> Room[F](
               roomName, 
               password, 
               owner, 
               Map.empty, 
-              mode
+              mode,
+              ???
             ))
           ).asRight
 
@@ -133,7 +135,7 @@ final case class Lobby private (
     * @param roomName
     * @return
     */
-  def getRoom (roomName: RoomName): Either[ErrorDescription, Room] = 
+  def getRoom (roomName: RoomName): Either[ErrorDescription, Room[F]] = 
     rooms.get(roomName) match {
       case Some(room) => room.asRight
       case None       => s"there is no room with name $roomName".asLeft
@@ -151,7 +153,7 @@ final case class Lobby private (
     roomName: RoomName, 
     password: RoomPassword, 
     userId: UUIDString
-  ): Either[ErrorDescription, Lobby] = {
+  ): Either[ErrorDescription, Lobby[F]] = {
     // TODO: maybe make it return either
     if (roomName.value != "lobby") {
       
@@ -176,19 +178,20 @@ object Lobby {
     *
     * @return
     */
-  def of [F[_] : Concurrent]: F[Ref[F, Lobby]] = 
-    Ref.of[F, Lobby](
+  def of [F[_] : Concurrent]: F[Ref[F, Lobby[F]]] = 
+    Ref.of[F, Lobby[F]](
       Lobby (
-        Map[RoomName, Room](
+        Map[RoomName, Room[F]](
           // players that are not yet in a room will be stored inside special
           // "lobby" room
-          ("lobby": RoomName) -> Room(
+          ("lobby": RoomName) -> Room[F](
             "lobby", 
             "", 
             // placeholder until I decide what to do with this 
             "9430e584-3a8b-4b92-ad6a-ef3d75bea3a5",
             Map.empty,
-            GameMode.LobbyMode
+            GameMode.LobbyMode,
+            ???
           )
         )
       )

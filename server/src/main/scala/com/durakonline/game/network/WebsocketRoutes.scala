@@ -20,7 +20,7 @@ import scala.concurrent.duration._
 import eu.timepit.refined.api.RefType
 
 class WebsocketRoutes[F[_] : Timer](
-  lobby: Ref[F, Lobby],
+  lobby: Ref[F, Lobby[F]],
   managers: Ref[F, Map[RoomName, GameManager[F]]]
 )(
   implicit F: ConcurrentEffect[F]

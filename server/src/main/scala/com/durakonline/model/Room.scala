@@ -1,13 +1,16 @@
 package com.durakonline.model
 
 import com.durakonline.game.GameMode
+import com.durakonline.game.GameManager
+import cats.effect.concurrent.Ref
 
-final case class Room (
+final case class Room [F[_]](
   name: RoomName, 
   password: RoomPassword,
   owner: UUIDString,
   players: Map[UUIDString, Player],
-  mode: GameMode
+  mode: GameMode,
+  gameManager: Ref[F, GameManager[F]]
 ) {
   /**
     * Returns room with added player, or an error description
@@ -15,7 +18,7 @@ final case class Room (
     * @param player
     * @return
     */
-  def addPlayer (player: Player): Either[ErrorDescription, Room] = 
+  def addPlayer (player: Player): Either[ErrorDescription, Room[F]] = 
     players.find{ case (_, currPlayer) => currPlayer.id == player.id }
       match {
         case None    => 
@@ -30,7 +33,7 @@ final case class Room (
     * @param id
     * @return
     */
-  def removePlayer (id: UUIDString): Room = 
+  def removePlayer (id: UUIDString): Room[F] = 
     this.copy(players = players.filter{ case (currId, _) => currId != id })
 }
 

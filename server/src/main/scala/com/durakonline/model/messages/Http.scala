@@ -84,21 +84,21 @@ object Http {
       playerCount: Int
     )
     object RoomData {
-      def apply (room: Room): RoomData = 
+      def apply [F[_]] (room: Room[F]): RoomData = 
         RoomData(room.name, room.mode, room.players.size)
     }
     
     @JsonCodec case class RoomsList (rooms: List[RoomData])
     object RoomsList {
-      def apply (lobby: Lobby): RoomsList = 
-        RoomsList(lobby.rooms.values.map(RoomData.apply).toList)
+      def apply [F[_]] (lobby: Lobby[F]): RoomsList = 
+        RoomsList(lobby.rooms.values.map(RoomData.apply[F]).toList)
     }
 
     @JsonCodec case class PlayerData (name: UserName, id: Option[UUIDString])
 
     @JsonCodec case class PlayersList (players: List[PlayerData])
     object PlayersList {
-      def apply (lobby: Lobby): PlayersList = 
+      def apply [F[_]] (lobby: Lobby[F]): PlayersList = 
         PlayersList(lobby.getAllPlayers.values.map(player =>
           PlayerData(player.name, None)
         ).toList)
