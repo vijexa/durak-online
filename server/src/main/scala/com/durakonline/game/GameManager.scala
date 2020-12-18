@@ -22,8 +22,7 @@ import org.http4s.websocket.WebSocketFrame._
 import scala.concurrent.duration._
 import eu.timepit.refined.api.RefType
 
-case class GameManager [F[_] : Sync : Concurrent] (
-  roomName: RoomName,
+case class GameManager [F[_] : Concurrent] (
   gameState: Option[GameState],
   players: Vector[Player],
   playersReady: Vector[Player]
@@ -31,12 +30,18 @@ case class GameManager [F[_] : Sync : Concurrent] (
   def addPlayer (player: Player): GameManager[F] =
     copy(players = players :+ player)
 
-  def createConnection (player: Player): F[Response[F]] = {
+}
+
+object GameManager {
+  def empty [F[_] : Concurrent]: F[Ref[F, GameManager[F]]] =
+    Ref.of[F, GameManager[F]](GameManager[F](None, Vector.empty, Vector.empty))
+
+  def createConnection [F[_] : Concurrent] (manager: Ref[F, GameManager[F]], player: Player): F[Response[F]] = {
     val echoReply: Pipe[F, WebSocketFrame, WebSocketFrame] =
       _.collect {
-        case Text(msg, _) => Text("You sent the server: " + msg + " and players are " + players)
+        case Text(msg, _) => Text("You sent the server: " + msg)
         case _ => Text("Something new")
-      }
+      }.evalMap(t => manager.get.map(m => Text(s"$t and players are ${m.players}")))
 
     Queue
       .unbounded[F, WebSocketFrame]
@@ -47,8 +52,4 @@ case class GameManager [F[_] : Sync : Concurrent] (
         )
       }
   }
-}
-
-object GameManager {
-
 }

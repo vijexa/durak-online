@@ -62,59 +62,28 @@ class WebsocketRoutes[F[_] : Timer](
         req.cookies.find(_.name == "id").fold(
           BadRequest("no id in cookies")
         ){idCookie => 
-          for {
+          (for {
             lobby <- lobby.get
-            manager <- managers.modify { managers =>
-              val connectionWithManagers = for {
+            managerWPlayerOrError <- F.delay(
+              for {
                 id <- RefType.applyRef[UUIDString](idCookie.content)
                 name <- RefType.applyRef[RoomName](roomName)
                 room <- lobby.rooms.get(name)
                   .toRight("no room with specified name")
                 player <- room.players.get(id)
                   .toRight("no player with specified id")
+              } yield (room.gameManager, player)
+            )
 
-                manager = managers.getOrElse(
-                  name, 
-                  GameManager[F](name, None, Vector.empty, Vector.empty)
-                )
-                
-                newManager = manager.addPlayer(player)
-              } yield (
-                newManager, 
-                managers - manager.roomName + 
-                  (manager.roomName -> newManager)
-              )
-              
-              connectionWithManagers match {
-                case Left(value) => (managers, Left(value))
-                case Right(value) => value match {
-                  case (resp, newManagers) => (newManagers, Right(resp))
-                }
-              }
-            }
-            
-            response <- manager match {
-              case Left(value) => BadRequest(value)
-              case Right(manager) => 
-                val echoReply: Pipe[F, WebSocketFrame, WebSocketFrame] = stream => {
-                  stream.evalMapFilter {
-                    case Text(msg, _) => managers.get.map(_.get(manager.roomName).map(manager => 
-                      Text("You sent the server: " + msg + " and players are " + manager.players)
-                    ))
-                  }
-                }
+            respOrError <- F.delay(managerWPlayerOrError.map{ 
+              case (manager, player) => manager.update(_.addPlayer(player)) *> 
+                GameManager.createConnection(manager, player)
+            })
 
-                Queue
-                  .unbounded[F, WebSocketFrame]
-                  .flatMap { q =>
-                    WebSocketBuilder[F].build(
-                      receive = q.enqueue,
-                      send = q.dequeue.through(echoReply)
-                    )
-                  }
-            }
-          } yield response
-          
+          } yield respOrError match {
+            case Left(error) => BadRequest(error)
+            case Right(resp) => resp
+          }).flatten
         }
     }
 }

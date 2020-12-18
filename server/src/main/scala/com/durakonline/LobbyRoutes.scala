@@ -19,11 +19,13 @@ import eu.timepit.refined.auto._
 import java.util.UUID
 
 import eu.timepit.refined.api.RefType
+import com.durakonline.game.GameManager
+import cats.effect.Concurrent
 
 // TODO: REFACTOR THIS HORRIFIC NIGHTMARE
 
 
-class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby[F]]) {
+class LobbyRoutes [F[_]: Sync : Concurrent] (state: Ref[F, Lobby[F]]) {
   val dsl = new Http4sDsl[F]{}
   import dsl._
 
@@ -79,17 +81,22 @@ class LobbyRoutes [F[_]: Sync] (state: Ref[F, Lobby[F]]) {
   def roomManagementRoutes: HttpRoutes[F] = {
     HttpRoutes.of[F] {
 
-      case req @ POST -> Root / "create-room" =>
-        modifyStateFromJsonAndReturnResponse [Request.CreateRoom] (
-          req, 
-          (lobby, id, message) => lobby.addRoom(
-            message.name, 
-            message.password, 
-            id,
-            message.mode
-          ),
-          "failed to create room: "
-        )
+      case req @ POST -> Root / "create-room" => 
+        for {
+          manager <- GameManager.empty[F]
+          resp <- modifyStateFromJsonAndReturnResponse [Request.CreateRoom] (
+            req, 
+            (lobby, id, message) => lobby.addRoom(
+              message.name, 
+              message.password, 
+              id,
+              message.mode,
+              manager
+            ),
+            "failed to create room: "
+          )
+        } yield resp
+        
 
       case req @ POST -> Root / "remove-room" =>
         modifyStateFromJsonAndReturnResponse [Request.RemoveRoom] (
