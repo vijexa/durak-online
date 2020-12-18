@@ -1,26 +1,26 @@
 package com.durakonline.game
 
 import com.durakonline.model._
+import com.durakonline.game.network.Messages.Request._
+import com.durakonline.game.network.Messages.Response._
 
 import org.http4s.Response
-import cats.effect.Sync
 
+import io.circe.parser.decode, io.circe.syntax._
 
 import cats.effect._
 import cats.syntax.all._
 import cats.effect.concurrent.Ref
 
-import fs2._
+import fs2.{ Stream, Pipe }
 import fs2.concurrent.Queue
 
-import org.http4s._
-import org.http4s.dsl.Http4sDsl
 import org.http4s.server.websocket._
 import org.http4s.websocket.WebSocketFrame
 import org.http4s.websocket.WebSocketFrame._
 
 import scala.concurrent.duration._
-import eu.timepit.refined.api.RefType
+
 
 case class GameManager [F[_] : Concurrent] (
   gameState: Option[GameState],
@@ -30,25 +30,51 @@ case class GameManager [F[_] : Concurrent] (
   def addPlayer (player: Player): GameManager[F] =
     copy(players = players :+ player)
 
+  def addToReady (playerId: UUIDString): Either[String, GameManager[F]] =
+    for {
+      player <- players.find(_.id == playerId).toRight("no player with specified id")
+    } yield copy(playersReady = playersReady :+ player)
 }
 
 object GameManager {
   def empty [F[_] : Concurrent]: F[Ref[F, GameManager[F]]] =
     Ref.of[F, GameManager[F]](GameManager[F](None, Vector.empty, Vector.empty))
 
-  def createConnection [F[_] : Concurrent] (manager: Ref[F, GameManager[F]], player: Player): F[Response[F]] = {
+  def markReady [F[_]] (manager: Ref[F, GameManager[F]], id: UUIDString): F[Text] =
+    manager.modify(m => 
+      m.addToReady(id) match {
+        case Left(error) => (m, Text(Error(error).asJson.noSpaces))
+        case Right(newManager) => (newManager, Text(OK.apply.asJson.noSpaces))
+      }
+    )
+
+  def createConnection [F[_] : Concurrent : Timer] (
+    manager: Ref[F, GameManager[F]], 
+    player: Player
+  )(implicit CF: ConcurrentEffect[F]): F[Response[F]] = {
+
     val echoReply: Pipe[F, WebSocketFrame, WebSocketFrame] =
       _.collect {
-        case Text(msg, _) => Text("You sent the server: " + msg)
-        case _ => Text("Something new")
-      }.evalMap(t => manager.get.map(m => Text(s"$t and players are ${m.players}")))
+        case t @ Text(msg, _) => t
+        case _ => Text("unsupported")
+      }.evalMap{
+        case Text(msg, _) => decode[Action](msg) match {
+          case Left(error) => CF.delay(Text(Error(error.getMessage()).asJson.noSpaces))
+          case Right(action) => action match {
+            case MarkReady(_, playerId) => markReady(manager, playerId)
+          }
+        }
+      }
+
+    val playerNotifier = 
+      Stream.repeatEval(manager.get.map(m => Text(m.toString))).metered(1.second)
 
     Queue
       .unbounded[F, WebSocketFrame]
       .flatMap { q =>
         WebSocketBuilder[F].build(
           receive = q.enqueue,
-          send = q.dequeue.through(echoReply)
+          send = q.dequeue.through(echoReply) merge playerNotifier
         )
       }
   }
