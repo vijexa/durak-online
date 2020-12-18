@@ -1,6 +1,7 @@
 package com.durakonline
 
 import com.durakonline.model._
+import com.durakonline.game._
 import com.durakonline.game.network.WebsocketRoutes
 
 import org.http4s.implicits._
@@ -12,6 +13,7 @@ import cats.implicits._
 
 import cats.effect.{ConcurrentEffect, Timer}
 import cats.effect.ExitCode
+import cats.effect.concurrent.Ref
 
 object HttpServer {
 
@@ -20,9 +22,10 @@ object HttpServer {
     {
       for {
         lobby <- Lobby.of[F]
+        managers <- Ref.of[F, Map[RoomName, GameManager[F]]](Map.empty)
 
         lobbyRoutes = new LobbyRoutes[F](lobby)
-        wsRoutes = new WebsocketRoutes[F]
+        wsRoutes = new WebsocketRoutes[F](lobby, managers)
 
         httpApp = (
           lobbyRoutes.helloWorldRoutes <+> 
