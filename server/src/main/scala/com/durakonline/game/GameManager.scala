@@ -93,6 +93,52 @@ object GameManager {
     } yield resp
   }
 
+  def doGenericAction [F[_] : Concurrent] (
+    manager: Ref[F, GameManager[F]],
+    action: GameState => Either[String, GameState]
+  ): F[Text] = {
+    for {
+      errorOrResponse <- manager.modify{ m =>
+        val gameStateOrError = for {
+          gameState <- m.gameState.toRight("game has not started yet")
+          newState <- action(gameState)
+        } yield newState
+
+        (
+          gameStateOrError match {
+            case Left(error) => (m, Text(Error(error).asJson.noSpaces))
+            case Right(gameState) => (
+              m.copy(gameState = gameState.some), 
+              Text(OK.apply.asJson.noSpaces)
+            )
+          }
+        )
+      }
+    } yield errorOrResponse
+  }
+
+  def attackPlayer [F[_] : Concurrent] (
+    manager: Ref[F, GameManager[F]],
+    attacker: Player,
+    card: Card
+  ): F[Text] =
+    doGenericAction(
+      manager, 
+      _.attackPlayer(attacker, card).toRight("can't attack")
+    )
+
+  def defendPair [F[_] : Concurrent] (
+    manager: Ref[F, GameManager[F]],
+    defender: Player,
+    card: Card,
+    target: Card
+  ): F[Text] = 
+    doGenericAction(
+      manager, 
+      _.defendPair(defender, target, card)
+        .toRight("can't defend")
+    )
+
   def createConnection [F[_] : Concurrent : Timer] (
     manager: Ref[F, GameManager[F]], 
     player: Player
@@ -105,6 +151,9 @@ object GameManager {
           case Right(action) => action match {
             case MarkReady(_, playerId) => markReady(manager, playerId)
             case StartGame(_, playerId) => startGame(manager, playerId)
+            case AttackPlayer(_, card) => attackPlayer(manager, player, card)
+            case DefendPair(_, card, target) => 
+              defendPair(manager, player, card, target)
           }
         }
         

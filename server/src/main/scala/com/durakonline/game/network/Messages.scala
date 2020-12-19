@@ -17,10 +17,6 @@ import io.circe.generic.semiauto._
 import io.circe.syntax._
 
 object Messages {
-  object HelperTypes {
-    type MarkReadyString = String Refined MatchesRegex["mark-ready"]
-    type StartGameString = String Refined MatchesRegex["start-game"]
-  }
 
   object ImplicitCodecs {
     implicit val suitDecoder: Decoder[Suit] = Decoder.decodeString.emap(str =>
@@ -49,24 +45,39 @@ object Messages {
   }
 
   object Request {
-    import HelperTypes._
+    import ImplicitCodecs._
 
-    sealed trait Action
+    sealed trait Action {
+      val action: String
+    }
 
     @JsonCodec case class MarkReady (
-      action: MarkReadyString, 
+      action: "mark-ready", 
       playerId: UUIDString
     ) extends Action
 
     @JsonCodec case class StartGame (
-      action: StartGameString,
+      action: "start-game",
       playerId: UUIDString
+    ) extends Action
+
+    @JsonCodec case class AttackPlayer (
+      action: "attack-player",
+      card: Card
+    ) extends Action
+
+    @JsonCodec case class DefendPair (
+      action: "defend-pair",
+      card: Card,
+      target: Card
     ) extends Action
 
     implicit val decodeEvent: Decoder[Action] =
       List[Decoder[Action]](
         Decoder[MarkReady].widen,
-        Decoder[StartGame].widen
+        Decoder[StartGame].widen,
+        Decoder[AttackPlayer].widen,
+        Decoder[DefendPair].widen
       ).reduceLeft(_ or _)
   }
 
@@ -108,7 +119,8 @@ object Messages {
       board: Board,
       deck: SecretDeck,
       players: Vector[SecretHand],
-      discarded: Int
+      discarded: Int,
+      whoseTurn: Int
     )
 
     object GameStateMessage {
@@ -122,7 +134,8 @@ object Messages {
           players = gameState.players.filterNot(_.player == player).map{
             case PlayerWithHand(player, hand) => SecretHand(hand.size, player.name)
           },
-          discarded = gameState.discardPile.cards.size
+          discarded = gameState.discardPile.cards.size,
+          whoseTurn = gameState.players.indexWhere(_.player == gameState.whoseTurn)
         )
       }
     }

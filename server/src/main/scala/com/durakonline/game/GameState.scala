@@ -37,14 +37,11 @@ final case class GameState (
       else 
         DefenderCannotDefend
 
-    val othersAttackResolvement = /* attackerResolvement match {
-      case AttackerCanAttack =>  */
+    val othersAttackResolvement =
         if (attackerFinished) 
           OthersCanAttack 
         else 
           OthersCannotAttack
-      /* case AttackerCannotAttack => OthersCannotAttack
-    } */
 
     // TODO: resolve if game is finished
     
@@ -117,7 +114,6 @@ final case class GameState (
 
   def attackPlayer (
     attacker: Player, 
-    defender: Player, 
     card: Card
   ): Option[GameState] = for {
 
@@ -128,10 +124,9 @@ final case class GameState (
     // players to be able to add cards
     if attacker == whoseTurn || attackerFinished
 
-    (defenderWithHand, _) <- getPlayerWithHand(defender)
     // can't attack if there are more pairs than cards in a defender hand
     // or more than 6 pairs
-    if board.pairsCount <= defenderWithHand.hand.size && board.pairsCount <= 6
+    if board.pairsCount <= getDefender.hand.size && board.pairsCount <= 6
     
     // get attacker hand without this card, and also confirm that attacker 
     // actually has this card 
@@ -152,6 +147,9 @@ final case class GameState (
 
     // confirm that this defender exists and get it and it's index
     (defenderWithHand, defenderIndex) <- getPlayerWithHand(defender)
+
+    // confirm that this is true defender 
+    if (getDefender == defenderWithHand)
 
     // get defender hand without this card and check if it actually exists
     newDefenderWithHand <- defenderWithHand removeCardFromHand card
@@ -198,6 +196,7 @@ object GameState {
     mode: GameMode
   ): F[Option[GameState]] = {
     for {
+      // TODO: fix this 
       deck <- mode match {
         case GameMode.DeckOf24 => Deck.of24[F]
         case GameMode.DeckOf36 => Deck.of36[F]
