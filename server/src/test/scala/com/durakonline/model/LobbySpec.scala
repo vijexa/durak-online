@@ -7,20 +7,21 @@ import cats.effect._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 import com.durakonline.game.GameMode
+import com.durakonline.game.GameManager
 
 // yeah it's unreadable but I don't have much time sorryyyyy AAAAAAAAAAAAAAAA
 
 class LobbySpec extends AnyFlatSpec with IOApp {
 
   "Lobby" should "work as expected" in {
-    def testAddPlayerToRoomRight (lobby: Lobby, player: Player, roomName: RoomName, password: RoomPassword) =
+    def testAddPlayerToRoomRight (lobby: Lobby[IO], player: Player, roomName: RoomName, password: RoomPassword) =
       lobby.addPlayerToRoom(player, roomName, password)
         .fold(
           er => fail(s"Lobby.addPlayerToRoom returned unexpected Left: $er"), 
           identity
         )
     
-    def testAddPlayerToRoomLeft (lobby: Lobby, player: Player, roomName: RoomName, password: RoomPassword) =
+    def testAddPlayerToRoomLeft (lobby: Lobby[IO], player: Player, roomName: RoomName, password: RoomPassword) =
       lobby.addPlayerToRoom(player, roomName, password)
         .fold(
           identity, 
@@ -29,6 +30,7 @@ class LobbySpec extends AnyFlatSpec with IOApp {
 
     val uuid: UUIDString = "e79d1f15-11c6-48f0-9575-e323057438b2"
     val player = Player(uuid, "foobar")
+    val manager = GameManager.empty[IO].unsafeRunSync()
 
     val initial = Lobby.of[IO].unsafeRunSync().get.unsafeRunSync()
 
@@ -39,7 +41,7 @@ class LobbySpec extends AnyFlatSpec with IOApp {
 
     testAddPlayerToRoomLeft(a, player, "lobby", "")
     
-    val b = a.addRoom("foobar", "foobar123", player.id, GameMode.DeckOf24)
+    val b = a.addRoom("foobar", "foobar123", player.id, GameMode.DeckOf24, manager)
       .fold(
         er => fail(s"Lobby.addRoom returned unexpected Left: $er"),
         identity
@@ -56,7 +58,7 @@ class LobbySpec extends AnyFlatSpec with IOApp {
 
     c.getAllPlayers.size shouldBe 2
 
-    c.addRoom("foobar", "foobar123", player.id, GameMode.DeckOf24)
+    c.addRoom("foobar", "foobar123", player.id, GameMode.DeckOf24, manager)
       .fold(
         identity,
         _ => fail("Lobby.addRoom returned unexpected Right")
