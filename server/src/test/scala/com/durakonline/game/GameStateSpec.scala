@@ -63,7 +63,6 @@ class GameStateSpec extends AnyFlatSpec {
 
   def makeAttack = initial.attackPlayer( 
     players.head,
-    players.last, 
     Card(Value.Six, Suit.Hearts)
   ).get
 
@@ -71,14 +70,12 @@ class GameStateSpec extends AnyFlatSpec {
     // defending player tries to attack, but it's not his turn
     initial.attackPlayer(
       players.last, 
-      players.head, 
       Card(Value.Seven, Suit.Hearts)
     ).isEmpty shouldBe true
 
     // attacker doesn't have this card
     initial.attackPlayer( 
       players.head,
-      players.last, 
       Card(Value.Two, Suit.Clubs, true)
     ).isEmpty shouldBe true
 
@@ -91,7 +88,6 @@ class GameStateSpec extends AnyFlatSpec {
 
     val multipleAttacks = attacked.attackPlayer(
       players.head,
-      players.last,
       Card(Value.Six, Suit.Diamonds)
     ).get
 
@@ -171,7 +167,6 @@ class GameStateSpec extends AnyFlatSpec {
 
     val attackedTwice = makeAttack.attackPlayer(
       players.head, 
-      players.last, 
       Card(Value.Six, Suit.Diamonds)
     ).get
 

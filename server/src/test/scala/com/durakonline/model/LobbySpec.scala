@@ -30,9 +30,10 @@ class LobbySpec extends AnyFlatSpec with IOApp {
 
     val uuid: UUIDString = "e79d1f15-11c6-48f0-9575-e323057438b2"
     val player = Player(uuid, "foobar")
-    val manager = GameManager.empty[IO].unsafeRunSync()
+    val lobbyRef = Lobby.of[IO].unsafeRunSync()
+    val manager = GameManager.empty[IO](lobbyRef).unsafeRunSync()
 
-    val initial = Lobby.of[IO].unsafeRunSync().get.unsafeRunSync()
+    val initial = lobbyRef.get.unsafeRunSync()
 
     val a = testAddPlayerToRoomRight(initial, player, "lobby", "")
 
