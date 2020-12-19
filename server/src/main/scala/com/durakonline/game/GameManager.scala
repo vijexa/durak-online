@@ -112,7 +112,11 @@ object GameManager {
       }
 
     val playerNotifier = 
-      Stream.repeatEval(manager.get.map(m => Text(m.toString))).metered(1.second)
+      Stream.repeatEval(
+        manager.get.map(m => m.gameState.map(
+          state => GameStateMessage.of(state, player).asJson.noSpaces
+        ))
+      ).collect{ case Some(json) => Text(json) }.metered(1.second)
 
     Queue
       .unbounded[F, WebSocketFrame]
