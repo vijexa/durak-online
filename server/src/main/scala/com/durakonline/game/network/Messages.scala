@@ -16,6 +16,7 @@ import io.circe.syntax._
 object Messages {
   object HelperTypes {
     type MarkReadyString = String Refined MatchesRegex["mark-ready"]
+    type StartGameString = String Refined MatchesRegex["start-game"]
   }
 
   object Request {
@@ -23,18 +24,20 @@ object Messages {
 
     sealed trait Action
 
-    case class MarkReady(
+    case class MarkReady (
       action: MarkReadyString, 
       playerId: UUIDString
     ) extends Action
 
-    implicit val encodeEvent: Encoder[Action] = Encoder.instance {
-      case j : MarkReady => j.asJson
-    }
+    case class StartGame (
+      action: StartGameString,
+      playerId: UUIDString
+    ) extends Action
 
     implicit val decodeEvent: Decoder[Action] =
       List[Decoder[Action]](
-        Decoder[MarkReady].widen
+        Decoder[MarkReady].widen,
+        Decoder[StartGame].widen
       ).reduceLeft(_ or _)
   }
 

@@ -7,10 +7,7 @@ import cats.effect.concurrent.Ref
 
 import eu.timepit.refined.auto._
 import com.durakonline.game.GameMode
-import com.durakonline.game.GameState
 import com.durakonline.game.GameManager
-import cats.effect.Sync
-import cats.implicits._
 
 final case class Lobby [F[_] : Concurrent] private (
   rooms: Map[RoomName, Room[F]]
@@ -184,23 +181,23 @@ object Lobby {
     */
   def of [F[_] : Concurrent]: F[Ref[F, Lobby[F]]] = 
     for {
-      manager <- GameManager.empty[F]
       lobby <- Ref.of[F, Lobby[F]](
         Lobby (
-          Map[RoomName, Room[F]](
-            // players that are not yet in a room will be stored inside special
-            // "lobby" room
-            ("lobby": RoomName) -> Room[F](
-              "lobby", 
-              "", 
-              // placeholder until I decide what to do with this 
-              "9430e584-3a8b-4b92-ad6a-ef3d75bea3a5",
-              Map.empty,
-              GameMode.LobbyMode,
-              manager
-            )
-          )
+          Map[RoomName, Room[F]]()
         )
+      )
+      manager <- GameManager.empty[F](lobby)
+      _ <- lobby.update(l =>
+        // players that are not yet in a room will be stored inside special
+        // "lobby" room
+        l.addRoom(
+          "lobby", 
+          "", 
+          // placeholder until I decide what to do with this 
+          "9430e584-3a8b-4b92-ad6a-ef3d75bea3a5",
+          GameMode.LobbyMode,
+          manager
+        ).toOption.get
       )
     } yield lobby
 }

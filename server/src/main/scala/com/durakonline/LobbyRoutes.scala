@@ -83,7 +83,7 @@ class LobbyRoutes [F[_]: Sync : Concurrent] (state: Ref[F, Lobby[F]]) {
 
       case req @ POST -> Root / "create-room" => 
         for {
-          manager <- GameManager.empty[F]
+          manager <- GameManager.empty[F](state)
           resp <- modifyStateFromJsonAndReturnResponse [Request.CreateRoom] (
             req, 
             (lobby, id, message) => lobby.addRoom(
@@ -96,7 +96,6 @@ class LobbyRoutes [F[_]: Sync : Concurrent] (state: Ref[F, Lobby[F]]) {
             "failed to create room: "
           )
         } yield resp
-        
 
       case req @ POST -> Root / "remove-room" =>
         modifyStateFromJsonAndReturnResponse [Request.RemoveRoom] (

@@ -35,14 +35,14 @@ class WebsocketRoutes[F[_] : Timer](
           ref <- Ref.of[F, Int](0)
 
           echoReply: Pipe[F, WebSocketFrame, WebSocketFrame] =
-            _.collect{ case t: Text => t }
-              .evalMap {
+            _.evalMap {
                 case Text(msg, _) => ref.modify(x =>
                   (
                     x + 1,
                     Text(s"#$x You sent the server: $msg")
                   )
                 )
+                case _ => F.delay(Text("unsupported"))
               }
         
           pingStream = 
