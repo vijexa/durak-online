@@ -4,8 +4,6 @@ import com.durakonline.model._
 import com.durakonline.game._
 
 import eu.timepit.refined.auto._
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.string._
 
 import io.circe.generic.JsonCodec
 import io.circe.refined._
@@ -14,7 +12,6 @@ import cats.syntax.functor._
 
 import io.circe._
 import io.circe.generic.semiauto._
-import io.circe.syntax._
 
 object Messages {
 
@@ -26,12 +23,12 @@ object Messages {
     implicit val suitEncoder: Encoder[Suit] = 
       Encoder.encodeString.contramap[Suit](_.representation)
 
-    implicit val valueDecoder: Decoder[Value] = Decoder.decodeInt.emap(int =>
-      Value.values.find(_.num == int).toRight("invalid card value")
+    implicit val valueDecoder: Decoder[Value] = Decoder.decodeString.emap(str =>
+      Value.values.find(_.representation == str).toRight("invalid card value")
     )
 
     implicit val valueEncoder: Encoder[Value] = 
-      Encoder.encodeInt.contramap[Value](_.num)
+      Encoder.encodeString.contramap[Value](_.representation)
 
     implicit val cardCodec: Codec[Card] = deriveCodec[Card]
 
