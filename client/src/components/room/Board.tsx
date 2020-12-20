@@ -36,7 +36,7 @@ export default function Board ({pairs, className}: BoardProps) {
     <Container className={className}>
       {
         pairs.map(pair =>
-          <PairContainer>
+          <PairContainer key={pair.attacker.value + pair.attacker.suit} >
             <Card cardData={pair.attacker} />
             {
               pair.defender

@@ -2,6 +2,7 @@ import React from 'react'
 import styled from 'styled-components'
 
 import { CardData } from '../../model/CardData'
+import { DeckData } from '../../model/DeckData'
 import Card from './Card'
 
 function getRandomInt(min: number, max: number) {
@@ -18,30 +19,40 @@ const TrumpCard = styled(Card)`
   left: 1.2em;
 `
 
-const Container = styled.div`
-  transform: rotate(0deg);
+const OuterContainer = styled.div`
   position: absolute;
+  right: 50%;
+  bottom: 50%;
+`
+
+const InnerContainer = styled.div`
+  position: relative;
+  right: -50%;
+  bottom: -50%;
+  width: 3em;
+  height: 3em;
 `
 
 interface DeckProps {
-  trumpCard: CardData
-  cardAmount: number
+  deckData: DeckData
 
   className?: string
 }
 
-export default function Deck ({trumpCard, cardAmount, className}: DeckProps) {
+export default function Deck ({deckData, className}: DeckProps) {
 
-  if (cardAmount > 0) return (
-    <Container className={className}>
-      <TrumpCard cardData={trumpCard} rotation={90} />
+  if (deckData.cardCount > 0) return (
+    <OuterContainer className={className}>
+      <InnerContainer>
+        <TrumpCard cardData={deckData.trumpCard} rotation={90} />
 
-      {
-        [...Array(cardAmount - 1)].map((_, i) => 
-          <StyledCard key={i} rotation={getRandomInt(-15, 15)} back />
-        )
-      }
-    </Container>
+        {
+          [...Array(deckData.cardCount - 1)].map((_, i) => 
+            <StyledCard key={i} rotation={getRandomInt(-15, 15)} back />
+          )
+        }
+      </InnerContainer>
+    </OuterContainer>
   ) 
   else return <div />
 }
