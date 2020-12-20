@@ -15,25 +15,25 @@ const StyledCard = styled(Card)`
 
 const TrumpCard = styled(Card)`
   position: absolute;
-  left: 50px;
+  left: 1.2em;
 `
 
 const Container = styled.div`
   transform: rotate(0deg);
-  position: relative;
-  top: -100px;
-  right: -100px;
+  position: absolute;
 `
 
 interface DeckProps {
   trumpCard: CardData
   cardAmount: number
+
+  className?: string
 }
 
-export default function Deck ({trumpCard, cardAmount}: DeckProps) {
+export default function Deck ({trumpCard, cardAmount, className}: DeckProps) {
 
   if (cardAmount > 0) return (
-    <Container>
+    <Container className={className}>
       <TrumpCard cardData={trumpCard} rotation={90} />
 
       {

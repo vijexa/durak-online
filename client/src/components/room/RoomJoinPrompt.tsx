@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
-import { useParams } from 'react-router-dom'
 
 import fetchJsonPost from '../../util/fetchJsonPost'
 import { Status, StatusCodec } from '../../model/Status'
@@ -27,11 +26,14 @@ const Container = styled.div`
 `
 
 interface RoomJoinPromptProps {
+  roomName: string
   onJoinedChange: (isJoined: boolean) => void
 }
 
-export default function RoomJoinPrompt ({onJoinedChange}: RoomJoinPromptProps) {
-  const { roomName } = useParams<{roomName: string}>()
+export default function RoomJoinPrompt ({
+  roomName, 
+  onJoinedChange
+}: RoomJoinPromptProps) {
   const [password, setPassword] = useState('')
 
   const joinRoom = () => {
