@@ -1,6 +1,5 @@
 
-import { Codec, GetType, string, array } from 'purify-ts/Codec'
-import { Left, Right } from 'purify-ts/Either'
+import { Codec, GetType, nullable } from 'purify-ts/Codec'
 import { List } from 'purify-ts/List'
 
 export const values = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"] as const
@@ -25,3 +24,10 @@ export const CardDataCodec = Codec.interface({
 })
 
 export type CardData = GetType<typeof CardDataCodec>
+
+export const CardPairDataCodec = Codec.interface({
+  attacker: CardDataCodec,
+  defender: nullable(CardDataCodec)
+})
+
+export type CardPairData = GetType<typeof CardPairDataCodec>
