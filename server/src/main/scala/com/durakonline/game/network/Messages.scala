@@ -96,13 +96,15 @@ object Messages {
 
     @JsonCodec case class SecretDeck (
       topCard: Option[Card],
-      trumpCard: Card
+      trumpCard: Card,
+      cardCount: Int
     )
 
     object SecretDeck {
       def apply (deck: Deck): SecretDeck = SecretDeck(
         deck.cards.headOption, 
-        deck.trumpCard
+        deck.trumpCard,
+        deck.cards.size
       )
     }
 
