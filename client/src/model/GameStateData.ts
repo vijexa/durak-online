@@ -10,7 +10,8 @@ export const GameStateDataCodec = Codec.interface({
   deck: DeckDataCodec,
   players: array(SecretHandDataCodec),
   discarded: number,
-  whoseTurn: number
+  whoseTurn: number,
+  yourIndex: number
 })
 
 export type GameState = GetType<typeof GameStateDataCodec>

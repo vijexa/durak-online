@@ -95,14 +95,12 @@ object Messages {
     }
 
     @JsonCodec case class SecretDeck (
-      topCard: Option[Card],
       trumpCard: Card,
       cardCount: Int
     )
 
     object SecretDeck {
       def apply (deck: Deck): SecretDeck = SecretDeck(
-        deck.cards.headOption, 
         deck.trumpCard,
         deck.cards.size
       )
@@ -119,7 +117,8 @@ object Messages {
       deck: SecretDeck,
       players: Vector[SecretHand],
       discarded: Int,
-      whoseTurn: Int
+      whoseTurn: Int,
+      yourIndex: Int
     )
 
     object GameStateMessage {
@@ -130,11 +129,12 @@ object Messages {
           hand = hand,
           board = gameState.board,
           deck = SecretDeck(gameState.deck),
-          players = gameState.players.filterNot(_.player == player).map{
+          players = gameState.players.map{
             case PlayerWithHand(player, hand) => SecretHand(hand.size, player.name)
           },
           discarded = gameState.discardPile.cards.size,
-          whoseTurn = gameState.players.indexWhere(_.player == gameState.whoseTurn)
+          whoseTurn = gameState.players.indexWhere(_.player == gameState.whoseTurn),
+          yourIndex = gameState.players.indexWhere(_.player == player)
         )
       }
     }
