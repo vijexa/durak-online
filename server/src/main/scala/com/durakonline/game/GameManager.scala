@@ -130,8 +130,12 @@ object GameManager {
                 ) || (
                   resolvements.contains(DefenderCannotDefend) &&
                   resolvements.contains(AttackerCannotAttack) 
+                ) || (
+                  resolvements.contains(DefenderCanDefend) &&
+                  resolvements.contains(AttackerCannotAttack) &&
+                  !gameState.board.isThreatened
                 )
-              ) gameState.finishTurn.getOrElse(gameState) else gameState
+              ) gameState.finishTurn(resolvements).getOrElse(gameState) else gameState
 
               (
                 m.copy(gameState = resolvedGameState.some), 
@@ -204,6 +208,14 @@ object GameManager {
             case AttackPlayer(_, card) => attackPlayer(manager, player, card)
             case DefendPair(_, card, target) => 
               defendPair(manager, player, card, target)
+            case TakeCards(_) => doGenericAction(
+              manager,
+              state => state.takeCards(player).toRight("cannot take cards")
+            )
+            case FinishAttack(_) => doGenericAction(
+              manager,
+              state => state.endAttackerTurn(player).toRight("cannot end turn")
+            )
           }
         }
 

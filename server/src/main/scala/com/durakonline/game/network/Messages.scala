@@ -69,12 +69,22 @@ object Messages {
       target: Card
     ) extends Action
 
+    @JsonCodec case class TakeCards (
+      action: "take-cards"
+    ) extends Action
+
+    @JsonCodec case class FinishAttack (
+      action: "finish-attack"
+    ) extends Action
+
     implicit val decodeEvent: Decoder[Action] =
       List[Decoder[Action]](
         Decoder[MarkReady].widen,
         Decoder[StartGame].widen,
         Decoder[AttackPlayer].widen,
-        Decoder[DefendPair].widen
+        Decoder[DefendPair].widen,
+        Decoder[TakeCards].widen,
+        Decoder[FinishAttack].widen
       ).reduceLeft(_ or _)
   }
 

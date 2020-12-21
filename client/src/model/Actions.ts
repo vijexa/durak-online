@@ -40,3 +40,17 @@ export const DefendActionCodec = Codec.custom<DefendAction>({
   decode: _ => Left("not implemented"),
   encode: action => ({ action: 'defend-pair', card: action.card, target: action.target })
 })
+
+export type TakeCardsAction = {}
+
+export const TakeCardsActionCodec = Codec.custom<TakeCardsAction>({
+  decode: _ => Left("not implemented"),
+  encode: action => ({ action: 'take-cards' })
+})
+
+export type FinishAttackAction = {}
+
+export const FinishAttackActionCodec = Codec.custom<FinishAttackAction>({
+  decode: _ => Left("not implemented"),
+  encode: action => ({ action: 'finish-attack' })
+})

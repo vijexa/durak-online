@@ -1,6 +1,8 @@
 package com.durakonline.game
 
 import com.durakonline.model.Player
+import com.durakonline.game.TurnResolvement._
+import AttackerResolvement._, DefenderResolvement._, OthersAttackResolvement._
 
 import cats.implicits._
 import cats.effect.Sync
@@ -15,13 +17,16 @@ final case class GameState (
 ) {
 
   def resolveTurn: Set[TurnResolvement] = {
-    import com.durakonline.game.TurnResolvement._
-    import AttackerResolvement._, DefenderResolvement._, OthersAttackResolvement._
 
     val (attacker, _) = getPlayerWithHand(whoseTurn).get
+
+    val canAttack: PlayerWithHand => Boolean = 
+      _.hand.cards.exists(card => board.canAttack(card))
     
     val attackerResolvement = 
-      if (attacker.hand.cards.exists(card => board.canAttack(card))) 
+      if (attackerFinished)
+        AttackerCannotAttack
+      else if (canAttack(attacker)) 
         AttackerCanAttack
       else 
         AttackerCannotAttack
@@ -32,13 +37,15 @@ final case class GameState (
           board.pairs.exists(pair =>
              board.canDefend(card, pair)
           )
-        )
+        ) || !board.isThreatened
       ) DefenderCanDefend
       else 
         DefenderCannotDefend
 
     val othersAttackResolvement =
-        if (attackerFinished) 
+        // in my variation of Durak other players can attack if there is at least
+        // one card on the board and until attacker has finished...
+        if (!attackerFinished && board.pairsCount > 0) 
           OthersCanAttack 
         else 
           OthersCannotAttack
@@ -48,9 +55,12 @@ final case class GameState (
     Set(attackerResolvement, defenderResolvement, othersAttackResolvement)
   }
 
-  def finishTurn: Option[GameState] = {
+  def finishTurn (resolvements: Set[TurnResolvement]): Option[GameState] = {
+    val defenderLost: Boolean = 
+      resolvements.contains(DefenderCannotDefend) && board.isThreatened
+
     val (newDefender, newDiscardPile) = 
-      if (board.isThreatened) (
+      if (defenderLost) (
         getDefender.addCardsToHand(board.takeCards),
         discardPile
       ) else (
@@ -63,7 +73,7 @@ final case class GameState (
     val playersWithUpdatedDefender = players.updated(defenderIndex, newDefender)
 
     val whoseTurn = 
-      if (board.isThreatened) players(nextPlayerIndex(defenderIndex)).player
+      if (defenderLost) players(nextPlayerIndex(defenderIndex)).player
       else newDefender.player
 
     // TODO: take look at this with clear head and write tests
@@ -100,17 +110,8 @@ final case class GameState (
 
       if defender == getDefender.player
 
-      if attackerFinished
-
-      cardsFromBoard = board.takeCards
-
-      defenderWithNewCards = defenderWithHand.addCardsToHand(cardsFromBoard)
-    } yield this.copy(
-      players = players.updated(index, defenderWithNewCards),
-      board = Board.empty,
-      attackerFinished = false,
-      whoseTurn = players(nextPlayerIndex(index)).player
-    )
+      newState <- finishTurn(resolveTurn - DefenderCanDefend + DefenderCannotDefend)
+    } yield newState
 
   def attackPlayer (
     attacker: Player, 
@@ -120,13 +121,12 @@ final case class GameState (
     // confirm that such attacker exists and get it and it's index
     (attackerWithHand, attackerIndex) <- getPlayerWithHand(attacker)
 
-    // check if this is an attackers turn or attacker did his move for other
-    // players to be able to add cards
-    if attacker == whoseTurn || attackerFinished
+    // check if this is an attackers turn or has not finished their turn but put 
+    // at least one card on the board for other players to be able to add cards
+    if attacker == whoseTurn || (!attackerFinished && board.pairsCount > 0)
 
-    // can't attack if there are more pairs than cards in a defender hand
-    // or more than 6 pairs
-    if board.pairsCount <= getDefender.hand.size && board.pairsCount <= 6
+    // can't attack if there are more pairs than more than 6 pairs
+    if board.pairsCount <= 6
     
     // get attacker hand without this card, and also confirm that attacker 
     // actually has this card 
@@ -196,11 +196,16 @@ object GameState {
     mode: GameMode
   ): F[Option[GameState]] = {
     for {
-      // TODO: fix this 
       deck <- mode match {
         case GameMode.DeckOf24 => Deck.of24[F]
         case GameMode.DeckOf36 => Deck.of36[F]
         case GameMode.DeckOf52 => Deck.of52[F]
+
+        // not sure if this is right but it's truly an exceptional situation 
+        // that should never ever happen
+        case GameMode.LobbyMode => throw new Exception(
+          "game cannot be started in a lobby"
+        )
       }
       
       emptyHands = players.map(_ => Hand.empty)

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import { useCookies } from 'react-cookie'
 
-import { DefendActionCodec, MarkReadyActionCodec, StartGameActionCodec } from '../../model/Actions'
+import { DefendActionCodec, FinishAttackActionCodec, MarkReadyActionCodec, StartGameActionCodec, TakeCardsActionCodec } from '../../model/Actions'
 import sendJsonWebsocket from '../../util/sendJsonWebsocket'
 import Board from './Board'
 import Card from './Card'
@@ -67,6 +67,18 @@ const startGame = (socket: WebSocket, id: string) => sendJsonWebsocket(
   StartGameActionCodec
 )
 
+const takeCards = (socket: WebSocket) => sendJsonWebsocket(
+  socket, 
+  {}, 
+  TakeCardsActionCodec
+)
+
+const finishAttack = (socket: WebSocket) => sendJsonWebsocket(
+  socket, 
+  {}, 
+  FinishAttackActionCodec
+)
+
 interface GameProps {
   roomName: string
 }
@@ -101,6 +113,8 @@ export default function Game ({roomName}: GameProps) {
       <UIContainer>
         <StyledButton onClick={() => markReady(socket, id)}>Mark ready</StyledButton>
         <StyledButton onClick={() => startGame(socket, id)}>Start game</StyledButton>
+        <StyledButton onClick={() => takeCards(socket)}>Take cards</StyledButton>
+        <StyledButton onClick={() => finishAttack(socket)}>Finish attack</StyledButton>
       </UIContainer>
     </Container>
   )
