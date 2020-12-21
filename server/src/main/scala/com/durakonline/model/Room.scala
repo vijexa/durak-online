@@ -2,6 +2,7 @@ package com.durakonline.model
 
 import com.durakonline.game.GameMode
 import com.durakonline.game.GameManager
+
 import cats.effect.concurrent.Ref
 
 final case class Room [F[_]](
@@ -19,13 +20,17 @@ final case class Room [F[_]](
     * @return
     */
   def addPlayer (player: Player): Either[ErrorDescription, Room[F]] = 
-    players.find{ case (_, currPlayer) => currPlayer.id == player.id }
-      match {
-        case None    => 
-          Right(this.copy(players = players + (player.id -> player)))
-        case Some(_) => 
-          Left(s"player with such id already exists in room $name")
-      }
+    for {
+      _ <- players.find{ case (_, currPlayer) => currPlayer.id == player.id }
+        .fold[Either[String, Unit]](Right(()))(
+          _ => Left(s"player with such id already exists in room $name")
+        )
+      _ <- Either.cond(
+        players.size < mode.maxPlayers,
+        (),
+        "maximum amount of players in a room reached"
+      )
+    } yield copy(players = players + (player.id -> player))
 
   /**
     * Returns room with removed player, if any
