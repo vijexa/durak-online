@@ -162,17 +162,22 @@ class GameStateSpec extends AnyFlatSpec {
     import com.durakonline.game.TurnResolvement._
     import AttackerResolvement._, DefenderResolvement._, OthersAttackResolvement._
 
-    makeAttack.resolveTurn shouldBe Set(AttackerCanAttack, DefenderCanDefend, OthersCannotAttack)
-    makeDefend.resolveTurn shouldBe Set(AttackerCanAttack, DefenderCannotDefend, OthersCannotAttack)
+    makeAttack.resolveTurn shouldBe Set(AttackerCanAttack, DefenderCanDefend, OthersCanAttack)
+    makeDefend.resolveTurn shouldBe Set(AttackerCanAttack, DefenderCanDefend, OthersCanAttack)
 
     val attackedTwice = makeAttack.attackPlayer(
       players.head, 
       Card(Value.Six, Suit.Diamonds)
     ).get
 
-    attackedTwice.resolveTurn shouldBe Set(AttackerCannotAttack, DefenderCanDefend, OthersCannotAttack)
+    attackedTwice.resolveTurn shouldBe Set(AttackerCannotAttack, DefenderCanDefend, OthersCanAttack)
     attackedTwice.endAttackerTurn(players.head).get
-      .resolveTurn shouldBe Set(AttackerCannotAttack, DefenderCanDefend, OthersCanAttack)
+      .resolveTurn shouldBe Set(AttackerCannotAttack, DefenderCanDefend, OthersCannotAttack)
+
+    initial.attackPlayer(
+      players.head, 
+      Card(Value.Ten, Suit.Clubs, true)
+    ).get.resolveTurn shouldBe Set(AttackerCannotAttack, DefenderCannotDefend, OthersCanAttack)
   }
 
 
