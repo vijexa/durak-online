@@ -33,12 +33,18 @@ case class GameManager [F[_] : Concurrent] (
       case (_, room) if room.gameManager == ref => room 
     })
 
-  def addPlayer (player: Player): GameManager[F] =
-    copy(players = players :+ player)
+  def addPlayer (player: Player): Either[String, GameManager[F]] =
+    if (!players.contains(player)) copy(players = players :+ player).asRight
+    else Left("player is already connected")
 
   def addToReady (playerId: UUIDString): Either[String, GameManager[F]] =
     for {
       player <- players.find(_.id == playerId).toRight("no player with specified id")
+      _ <- Either.cond(
+        !playersReady.exists(_.id == playerId),
+        (),
+        "player is already ready"
+      )
     } yield copy(playersReady = playersReady :+ player)
 }
 

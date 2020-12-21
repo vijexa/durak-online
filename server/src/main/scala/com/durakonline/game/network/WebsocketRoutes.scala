@@ -75,10 +75,17 @@ class WebsocketRoutes[F[_] : Timer](
               } yield (room.gameManager, player)
             )
 
-            respOrError <- F.delay(managerWPlayerOrError.map{ 
-              case (manager, player) => manager.update(_.addPlayer(player)) *> 
-                GameManager.createConnection(manager, player)
-            })
+            respOrError <- managerWPlayerOrError.map {
+              case (manager, player) => manager.modify{m => 
+                  m.addPlayer(player) match {
+                    case Left(error) => (m, Left(error))
+                    case Right(newM) => (
+                      newM, 
+                      GameManager.createConnection(manager, player).asRight
+                    )
+                  }
+                }
+            }.sequence.map(_.flatten)
 
           } yield respOrError match {
             case Left(error) => BadRequest(error)
