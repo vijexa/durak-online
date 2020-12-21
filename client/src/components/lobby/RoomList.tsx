@@ -31,7 +31,7 @@ export default function RoomList (props: RoomListProps) {
 
   useEffect(() => {
     periodicFetching()
-    const interval = setInterval(periodicFetching, 10000)
+    const interval = setInterval(periodicFetching, 2000)
 
     return (() => clearInterval(interval))
   }, [])

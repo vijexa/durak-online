@@ -46,7 +46,7 @@ export default function PlayerList (props: PlayerListProps) {
 
   useEffect(() => {
     periodicFetching()
-    const interval = setInterval(periodicFetching, 10000)
+    const interval = setInterval(periodicFetching, 2000)
 
     return (() => clearInterval(interval))
   }, [])
