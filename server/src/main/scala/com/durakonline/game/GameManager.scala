@@ -3,6 +3,8 @@ package com.durakonline.game
 import com.durakonline.model._
 import com.durakonline.game.network.Messages.Request._
 import com.durakonline.game.network.Messages.Response._
+import com.durakonline.game.TurnResolvement.AttackerResolvement._
+import com.durakonline.game.TurnResolvement.DefenderResolvement._
 
 import org.http4s.Response
 
@@ -113,10 +115,22 @@ object GameManager {
         (
           gameStateOrError match {
             case Left(error) => (m, Text(Error(error).asJson.noSpaces))
-            case Right(gameState) => (
-              m.copy(gameState = gameState.some), 
-              Text(OK.apply.asJson.noSpaces)
-            )
+            case Right(gameState) => 
+              val resolvements = gameState.resolveTurn
+              val resolvedGameState = if (
+                (
+                  resolvements.contains(DefenderCannotDefend) &&
+                  resolvements.contains(AttackerCanAttack)
+                ) || (
+                  resolvements.contains(DefenderCannotDefend) &&
+                  resolvements.contains(AttackerCannotAttack) 
+                )
+              ) gameState.finishTurn.getOrElse(gameState) else gameState
+
+              (
+                m.copy(gameState = resolvedGameState.some), 
+                Text(OK.apply.asJson.noSpaces)
+              )
           }
         )
       }

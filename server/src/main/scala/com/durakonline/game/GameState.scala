@@ -48,7 +48,7 @@ final case class GameState (
     Set(attackerResolvement, defenderResolvement, othersAttackResolvement)
   }
 
-  private def finishTurn: Option[GameState] = {
+  def finishTurn: Option[GameState] = {
     val (newDefender, newDiscardPile) = 
       if (board.isThreatened) (
         getDefender.addCardsToHand(board.takeCards),

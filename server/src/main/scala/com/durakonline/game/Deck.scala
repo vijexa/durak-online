@@ -5,7 +5,7 @@ import cats.effect.Sync
 
 import util.Random
 
-// TODO: the idea is to be able to easily create decks of different sizes
+// the idea is to be able to easily create decks of different sizes
 // and compositions, and also implement getting random card and reduce Deck
 
 final case class Deck(cards: Vector[Card], trumpCard: Card) extends CardContainer {
@@ -26,7 +26,7 @@ final case class Deck(cards: Vector[Card], trumpCard: Card) extends CardContaine
         } match {
           case (hands, cards) => (this.copy(cards = cards), hands).some
         }
-      } else None
+      } else (this, hands).some
     } else None
   }
 
