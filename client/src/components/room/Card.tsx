@@ -8,6 +8,8 @@ const CardContainer = styled.div<{rotation: number}>`
   transform: rotate(${({rotation}) => rotation}deg);
   height: 3em;
 
+  cursor: pointer;
+
   > img {
     height: 100%;
   }
@@ -17,14 +19,21 @@ interface CardProps {
   cardData?: CardData
   rotation?: number
   back?: boolean
+  onClick?: () => void
 
   className?: string
 }
 
-export default function Card ({cardData, back, rotation, className}: CardProps) {
+export default function Card ({
+  cardData, 
+  back, 
+  rotation, 
+  onClick, 
+  className
+}: CardProps) {
 
   return (
-    <CardContainer className={className} rotation={rotation ?? 0}>
+    <CardContainer className={className} rotation={rotation ?? 0} onClick={onClick}>
       {
         cardData && !back
           ? <CardPicture card={cardData.value + cardData.suit} />

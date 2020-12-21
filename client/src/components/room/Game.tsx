@@ -97,7 +97,7 @@ export default function Game ({roomName}: GameProps) {
 
   if (socket) return (
     <Container>
-      { gameState ? <GameField gameState={gameState} /> : <div /> }
+      { gameState ? <GameField gameState={gameState} socket={socket} /> : <div /> }
       <UIContainer>
         <StyledButton onClick={() => markReady(socket, id)}>Mark ready</StyledButton>
         <StyledButton onClick={() => startGame(socket, id)}>Start game</StyledButton>

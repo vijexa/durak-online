@@ -1,7 +1,11 @@
 import React from 'react'
 import styled from 'styled-components'
+import { List } from 'purify-ts/List'
 
+import sendJsonWebsocket from '../../util/sendJsonWebsocket'
+import { AttackActionCodec, DefendAction, DefendActionCodec } from '../../model/Actions'
 import { CardData } from '../../model/CardData'
+import { BoardData } from '../../model/BoardData'
 import Card from './Card'
 
 const StyledCard = styled(Card)`
@@ -32,11 +36,21 @@ const ContainerInner = styled.div`
 interface HandProps {
   cards?: CardData[]
   cardAmount: number
+  isDefender?: boolean
+  socket: WebSocket,
+  boardData: BoardData
 
   className?: string
 }
 
-export default function Hand ({cards, cardAmount, className}: HandProps) {
+export default function Hand ({
+  cards, 
+  cardAmount, 
+  isDefender, 
+  socket, 
+  className,
+  boardData
+}: HandProps) {
 
   return (
     <ContainerOuter className={className}>
@@ -44,7 +58,32 @@ export default function Hand ({cards, cardAmount, className}: HandProps) {
         {
           cards 
             ? cards.map(
-              card => <StyledCard key={card.value + card.suit} cardData={card}/>
+              card => isDefender
+                ? <StyledCard 
+                  key={card.value + card.suit} 
+                  cardData={card}
+                  onClick={() =>
+                    List.find(pair => pair.defender === null, boardData.pairs)
+                      .ifJust(targetPair =>
+                        sendJsonWebsocket<DefendAction>(
+                          socket, 
+                          {card: card, target: targetPair.attacker},
+                          DefendActionCodec
+                        )
+                      )
+                  }
+                />
+                : <StyledCard 
+                  key={card.value + card.suit} 
+                  cardData={card}
+                  onClick={() =>
+                    sendJsonWebsocket(
+                      socket, 
+                      {card: card},
+                      AttackActionCodec
+                    )
+                  }
+                />
             ) 
             : cardAmount > 0
               ? [...Array(cardAmount)].map((_, i) => 

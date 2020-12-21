@@ -5,8 +5,15 @@ import styled from 'styled-components'
 import { CardData, CardPairData } from '../../model/CardData'
 import Card from './Card'
 
-const Container = styled.div`
+const OuterContainer = styled.div`
   position: absolute;
+  left: 50%;
+`
+
+const InnerContainer = styled.div`
+  position: relative;
+  left: -50%;
+  height: 0;
   display: flex;
   flex-direction: row;
 
@@ -33,20 +40,22 @@ interface BoardProps {
 export default function Board ({pairs, className}: BoardProps) {
 
   return (
-    <Container className={className}>
-      {
-        pairs.map(pair =>
-          <PairContainer key={pair.attacker.value + pair.attacker.suit} >
-            <Card cardData={pair.attacker} />
-            {
-              pair.defender
-                ? <Card cardData={pair.defender} />
-                : <div />
-            }
-          </PairContainer>
-        )
-      }
-    </Container>
+    <OuterContainer className={className}>
+      <InnerContainer>
+        {
+          pairs.map(pair =>
+            <PairContainer key={pair.attacker.value + pair.attacker.suit} >
+              <Card cardData={pair.attacker} />
+              {
+                pair.defender
+                  ? <Card cardData={pair.defender} />
+                  : <div />
+              }
+            </PairContainer>
+          )
+        }
+      </InnerContainer>
+    </OuterContainer>
   )
 }
 

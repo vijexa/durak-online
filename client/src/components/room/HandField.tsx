@@ -4,6 +4,7 @@ import styled from 'styled-components'
 
 import { CardData, CardPairData } from '../../model/CardData'
 import { HandData, SecretHandData } from '../../model/HandData'
+import { BoardData } from '../../model/BoardData'
 import Card from './Card'
 import Board from './Board'
 import Deck from './Deck'
@@ -34,6 +35,9 @@ interface HandFieldProps {
   players: SecretHandData[]
   yourHand: HandData
   yourIndex: number
+  socket: WebSocket
+  isDefender?: boolean
+  boardData: BoardData
 
   className?: string
 }
@@ -42,13 +46,22 @@ export default function HandField ({
   players, 
   yourHand, 
   yourIndex, 
-  className
+  className,
+  socket,
+  isDefender,
+  boardData
 }: HandFieldProps) {
 
   const unorderedHands = players.map((player, i) =>
     i == yourIndex
-      ? <Hand cardAmount={yourHand.cards.length} cards={yourHand.cards} />
-      : <Hand cardAmount={6} />
+      ? <Hand 
+        cardAmount={yourHand.cards.length} 
+        cards={yourHand.cards}
+        isDefender={isDefender}
+        socket={socket}
+        boardData={boardData}
+      />
+      : <Hand cardAmount={player.size} socket={socket} boardData={boardData} />
   )
 
   const orderedHands = [
