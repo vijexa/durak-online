@@ -30,7 +30,7 @@ case class GameManager [F[_] : Concurrent] (
   players: Vector[Player],
   playersReady: Vector[Player]
 ) {
-  def getRoom [F[_]] (ref: Ref[F, GameManager[F]]) = 
+  def getRoom (ref: Ref[F, GameManager[F]]) = 
     lobby.get.map(_.rooms.collectFirst{ 
       case (_, room) if room.gameManager == ref => room 
     })
@@ -48,6 +48,12 @@ case class GameManager [F[_] : Concurrent] (
         "player is already ready"
       )
     } yield copy(playersReady = playersReady :+ player)
+
+  def removePlayer (player: Player): GameManager[F] =
+    copy(
+      players = players.filterNot(_ == player),
+      playersReady = playersReady.filterNot(_ == player)
+    )
 }
 
 object GameManager {
@@ -159,6 +165,30 @@ object GameManager {
         .toRight("can't defend")
     )
 
+  // give player game state when it changes
+  def createPlayerNotifier [F[_] : Concurrent : Timer] (
+    manager: Ref[F, GameManager[F]],
+    player: Player
+  ): F[Stream[F, WebSocketFrame.Text]] = {
+    for {
+      gs <- manager.get.map(_.gameState)
+      prevGameState <- Ref.of[F, Option[GameState]](gs)
+    } yield Stream.repeatEval(
+      for {
+        m <- manager.get 
+        resp <- prevGameState.modify(prevState => 
+          m.gameState.collect {
+            case state if state.some != prevState => 
+              GameStateMessage.of(state, player).asJson.noSpaces
+          } match {
+            case Some(value) => (m.gameState, Some(value))
+            case None => (prevState, None)
+          }
+        )
+      } yield resp
+    ).collect{ case Some(json) => Text(json) }.metered(100.millisecond) 
+  }
+
   def createConnection [F[_] : Concurrent : Timer] (
     manager: Ref[F, GameManager[F]], 
     player: Player
@@ -176,24 +206,25 @@ object GameManager {
               defendPair(manager, player, card, target)
           }
         }
+
+        case Close(data) => 
+          manager.update(
+            _.removePlayer(player).copy(gameState = None)
+          ) as Text("bye")
         
         case _ => CF.delay(Text("unsupported"))
       }
 
-    val playerNotifier = 
-      Stream.repeatEval(
-        manager.get.map(m => m.gameState.map(
-          state => GameStateMessage.of(state, player).asJson.noSpaces
-        ))
-      ).collect{ case Some(json) => Text(json) }.metered(1.second)
-
-    Queue
-      .unbounded[F, WebSocketFrame]
-      .flatMap { q =>
-        WebSocketBuilder[F].build(
-          receive = q.enqueue,
-          send = q.dequeue.through(echoReply) merge playerNotifier
-        )
-      }
+    for {
+      playerNotifier <- createPlayerNotifier(manager, player)
+      resp <- Queue
+        .unbounded[F, WebSocketFrame]
+        .flatMap { q =>
+          WebSocketBuilder[F].build(
+            receive = q.enqueue,
+            send = q.dequeue.through(echoReply) merge playerNotifier
+          )
+        }
+    } yield resp
   }
 }
