@@ -91,7 +91,9 @@ export default function Game ({roomName}: GameProps) {
   const [gameState, setGameState] = useState<GameState | undefined>(undefined)
 
   useEffect(() => {
-    const socket = new WebSocket('ws://localhost:8080/room-connect/' + roomName)
+    const socket = new WebSocket(
+      'ws://' + window.location.hostname + ':8080/room-connect/' + roomName
+    )
 
     socket.addEventListener('message', (event) => {
       const parsed = GameStateDataCodec.decode(JSON.parse(event.data))
