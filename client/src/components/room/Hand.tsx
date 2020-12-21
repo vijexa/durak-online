@@ -1,5 +1,5 @@
 import React from 'react'
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
 import { List } from 'purify-ts/List'
 
 import sendJsonWebsocket from '../../util/sendJsonWebsocket'
@@ -22,11 +22,25 @@ const ContainerOuter = styled.div`
   right: 50%;
 `
 
-const ContainerInner = styled.div`
+export type HighlightOptions = 'no' | 'attacker' | 'defender'
+
+const ContainerInner = styled.div<{highlight: HighlightOptions}>`
   position: relative;
   right: -50%;
   display: flex;
   flex-direction: row;
+        border-radius: 0.25em;
+  ${({highlight}) => {
+    if (highlight === 'attacker') {
+      return css`
+        border: dashed 0.25em yellow;
+      `
+    } else if (highlight === 'defender')
+      return css`
+        border: dashed 0.25em lightskyblue;
+      `
+    }
+  }}
 
   > *:nth-child(n + 2) {
     margin-left: -0.75em;
@@ -39,6 +53,7 @@ interface HandProps {
   isDefender?: boolean
   socket: WebSocket,
   boardData: BoardData
+  highlight: HighlightOptions
 
   className?: string
 }
@@ -49,12 +64,13 @@ export default function Hand ({
   isDefender, 
   socket, 
   className,
-  boardData
+  boardData,
+  highlight
 }: HandProps) {
 
   return (
     <ContainerOuter className={className}>
-      <ContainerInner>
+      <ContainerInner highlight={highlight}>
         {
           cards 
             ? cards.map(

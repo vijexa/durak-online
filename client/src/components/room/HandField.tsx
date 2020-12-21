@@ -8,7 +8,8 @@ import { BoardData } from '../../model/BoardData'
 import Card from './Card'
 import Board from './Board'
 import Deck from './Deck'
-import Hand from './Hand'
+import Hand, { HighlightOptions } from './Hand'
+import { getNextIndex } from './GameField'
 
 const Container = styled.div`
   position: relative;
@@ -31,6 +32,16 @@ const HandContainer = styled.div<{rotation: number}>`
   }
 `
 
+function getHighlightOption (
+  whoseTurn: number, 
+  i: number, 
+  length: number
+): HighlightOptions {
+  if (whoseTurn === i) return 'attacker'
+  else if (getNextIndex(whoseTurn, length) === i) return 'defender'
+  else return 'no'
+}
+
 interface HandFieldProps {
   players: SecretHandData[]
   yourHand: HandData
@@ -38,6 +49,7 @@ interface HandFieldProps {
   socket: WebSocket
   isDefender?: boolean
   boardData: BoardData
+  whoseTurn: number
 
   className?: string
 }
@@ -49,7 +61,8 @@ export default function HandField ({
   className,
   socket,
   isDefender,
-  boardData
+  boardData,
+  whoseTurn
 }: HandFieldProps) {
 
   const unorderedHands = players.map((player, i) =>
@@ -60,8 +73,14 @@ export default function HandField ({
         isDefender={isDefender}
         socket={socket}
         boardData={boardData}
+        highlight={getHighlightOption(whoseTurn, i, players.length)}
       />
-      : <Hand cardAmount={player.size} socket={socket} boardData={boardData} />
+      : <Hand 
+        cardAmount={player.size} 
+        socket={socket} 
+        boardData={boardData} 
+        highlight={getHighlightOption(whoseTurn, i, players.length)}
+      />
   )
 
   const orderedHands = [

@@ -23,7 +23,7 @@ const StyledBoard = styled(Board)`
   bottom: 40vh;
 `
 
-function getNextIndex (currI: number, length: number): number {
+export function getNextIndex (currI: number, length: number): number {
   if (currI + 1 !== length) return currI + 1
   else return 0
 }
@@ -53,6 +53,7 @@ export default function GameField ({gameState, socket, className}: GameFieldProp
         isDefender={isDefender}
         socket={socket}
         boardData={gameState.board}
+        whoseTurn={gameState.whoseTurn}
       />
     </Container>
   )

@@ -8,7 +8,7 @@ const CardContainer = styled.div<{rotation: number}>`
   transform: rotate(${({rotation}) => rotation}deg);
   height: 3em;
 
-  cursor: pointer;
+  cursor: pointer; 
 
   > img {
     height: 100%;
